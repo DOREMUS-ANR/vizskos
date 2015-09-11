@@ -1,0 +1,146 @@
+
+//top concepts
+
+PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX mimo-gr: <http://194.250.19.133:9091/mimo>
+PREFIX mimo: <http://www.mimo-db.eu/InstrumentsKeywords>
+SELECT distinct ?concept ?label
+WHERE { GRAPH mimo-gr: 
+   { 
+   ?concept skos:topConceptOf mimo: . 
+   ?concept skos:prefLabel ?label .
+   FILTER (lang(?label) = "en")
+   }
+} 
+ORDER BY ?label
+LIMIT 100
+
+
+
+
+
+
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+PREFIX mimo-gr: <http://194.250.19.133:9091/mimo>
+PREFIX mimo: <http://www.mimo-db.eu/InstrumentsKeywords>
+SELECT distinct ?concept 
+        ?prefLabel ?prefLabelEn ?prefLabelFr ?prefLabelIt ?prefLabelDe ?prefLabelNl ?prefLabelSv ?prefLabelCa
+        ?altLabel ?altLabelEn ?altLabelFr ?altLabelIt ?altLabelDe ?altLabelNl ?altLabelSv ?altLabelCa  
+WHERE { GRAPH mimo-gr:
+   {
+     ?concept rdf:type skos:Concept . FILTER (?concept = <http://www.mimo-db.eu/InstrumentsKeywords/3888>)
+     OPTIONAL { ?concept skos:prefLabel ?prefLabel . FILTER (lang(?prefLabel) = "") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelEn . FILTER (lang(?prefLabelEn) = "en") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelFr . FILTER (lang(?prefLabelFr) = "fr") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelIt . FILTER (lang(?prefLabelIt) = "it") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelDe . FILTER (lang(?prefLabelDe) = "de") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelNl . FILTER (lang(?prefLabelNl) = "nl") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelSv . FILTER (lang(?prefLabelSv) = "sv") } .
+     OPTIONAL { ?concept skos:prefLabel ?prefLabelCa . FILTER (lang(?prefLabelCa) = "ca") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabel . FILTER (lang(?altLabel) = "") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelEn . FILTER (lang(?altLabelEn) = "en") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelFr . FILTER (lang(?altLabelFr) = "fr") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelIt . FILTER (lang(?altLabelIt) = "it") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelDe . FILTER (lang(?altLabelDe) = "de") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelNl . FILTER (lang(?altLabelNl) = "nl") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelSv . FILTER (lang(?altLabelSv) = "sv") } .
+     OPTIONAL { ?concept skos:altLabel ?altLabelCa . FILTER (lang(?altLabelCa) = "ca") } .
+   }
+}
+ORDER BY ?concept
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+from SPARQLWrapper import SPARQLWrapper, JSON
+ 
+sparql = SPARQLWrapper("http://194.250.19.133:9091/sparql")
+sparql.setQuery("""
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX mimo-gr: <http://194.250.19.133:9091/mimo>
+  PREFIX mimo: <http://www.mimo-db.eu/InstrumentsKeywords>
+  SELECT distinct ?concept 
+        ?prefLabel ?prefLabelEn ?prefLabelFr ?prefLabelIt ?prefLabelDe ?prefLabelNl ?prefLabelSv ?prefLabelCa
+        ?altLabel ?altLabelEn ?altLabelFr ?altLabelIt ?altLabelDe ?altLabelNl ?altLabelSv ?altLabelCa  
+  FROM mimo-gr:
+  WHERE 
+  { 
+ 
+      ?concept rdf:type skos:Concept .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabel . FILTER (lang(?prefLabel) = "") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelEn . FILTER (lang(?prefLabelEn) = "en") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelFr . FILTER (lang(?prefLabelFr) = "fr") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelIt . FILTER (lang(?prefLabelIt) = "it") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelDe . FILTER (lang(?prefLabelDe) = "de") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelNl . FILTER (lang(?prefLabelNl) = "nl") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelSv . FILTER (lang(?prefLabelSv) = "sv") } .
+      OPTIONAL { ?concept skos:prefLabel ?prefLabelCa . FILTER (lang(?prefLabelCa) = "ca") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabel . FILTER (lang(?altLabel) = "") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelEn . FILTER (lang(?altLabelEn) = "en") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelFr . FILTER (lang(?altLabelFr) = "fr") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelIt . FILTER (lang(?altLabelIt) = "it") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelDe . FILTER (lang(?altLabelDe) = "de") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelNl . FILTER (lang(?altLabelNl) = "nl") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelSv . FILTER (lang(?altLabelSv) = "sv") } .
+      OPTIONAL { ?concept skos:altLabel ?altLabelCa . FILTER (lang(?altLabelCa) = "ca") } .
+
+  }
+  ORDER BY ?concept
+""")
+sparql.setReturnFormat(JSON)
+results = sparql.query().convert()
+ 
+for result in results["results"]["bindings"]:
+  print result
+
+
+
+
+
+
+
+  PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX mimo-gr: <http://194.250.19.133:9091/mimo>
+  SELECT DISTINCT ?concept 
+  ?prefLabel ?prefLabel@en ?prefLabelFr ?prefLabelIt ?prefLabelDe ?prefLabelNl ?prefLabelSv ?prefLabelCa 
+  ?altLabel ?exactMatch ?closeMatch
+  FROM mimo-gr:
+  WHERE {
+    ?concept rdf:type skos:Concept .
+    OPTIONAL { ?concept skos:prefLabel+ ?prefLabel . FILTER (lang(?prefLabel) = "") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabel@en . FILTER (lang(?prefLabel@en) = "en") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelFr . FILTER (lang(?prefLabelFr) = "fr") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelIt . FILTER (lang(?prefLabelIt) = "it") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelDe . FILTER (lang(?prefLabelDe) = "de") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelNl . FILTER (lang(?prefLabelNl) = "nl") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelSv . FILTER (lang(?prefLabelSv) = "sv") } .
+    OPTIONAL { ?concept skos:prefLabel ?prefLabelCa . FILTER (lang(?prefLabelCa) = "ca") } .
+    OPTIONAL { ?concept skos:altLabel+ ?altLabel} .
+    OPTIONAL { ?concept skos:exactMatch+ ?exactMatch} .
+    OPTIONAL { ?concept skos:closeMatch+ ?closeMatch} 
+  }
+  ORDER BY ?concept
+
+
+
+
+
+    PREFIX skos: <http://www.w3.org/2004/02/skos/core#>
+  PREFIX mimo-gr: <http://194.250.19.133:9091/mimo>
+  DESCRIBE ?concept 
+  FROM mimo-gr:
+  WHERE {
+    ?concept rdf:type skos:Concept
+  }
+  ORDER BY ?concept

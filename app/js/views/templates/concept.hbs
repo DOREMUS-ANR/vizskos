@@ -1,0 +1,84 @@
+<div class="concept {{{foldedClass}}}">
+  <header class="{{{conceptSchemeClass}}}">
+    <a class="close" href="/">X</a>
+    <p class="context"><a href="{{{process_uri conceptScheme}}}" class="link">{{{conceptSchemeName}}}</a></p>
+  </header>
+  <div class="body">
+    <nav>
+      <a class="prev" href="/"><</a>      
+      <a class="next" href="/">></a>      
+    </nav>
+    <hgroup>
+      <code>{{{type}}}</code>
+      {{#if prefLabel}}
+        <h1>{{{label_with_language prefLabel language}}}</h1>
+      {{/if}}
+      <p><a href="{{{process_uri uri}}}" class="link">{{{uri}}}</a></p>
+
+    </hgroup>
+    <detail>
+
+      {{#if skos:definition}}
+        <h2><code>skos:definition</code></h2>
+        <p class="definition">{{{translation_label skos:definition}}}</p>
+      {{/if}}
+      {{#if prefLabel}}
+        <h2><code>skos:prefLabel</code></h2>
+        <ul>
+        {{#each prefLabel}}
+          <li>{{{translation_label this}}} ({{{translation_language this}}})</li>
+        {{/each}}
+        </ul>
+      {{/if}}
+      {{#if altLabel}}
+        <h2><code>skos:altLabel</code></h2>
+        <ul>
+        {{#each altLabel}}
+          <li>{{{translation_label this}}} ({{{translation_language this}}})</li>
+        {{/each}}
+        </ul>
+      {{/if}}
+      {{#if hasTopConcept}}
+        <h2><code>skos:hasTopConcept</code></h2>
+        <ul>
+          {{#each hasTopConcept}}
+            <li><a href="{{{process_uri this}}}" class="link">{{{this}}}</a></li>
+          {{/each}}
+        </ul>
+      {{/if}}
+      {{#if parents}}
+        <h2><code>skos:broader</code></h2>
+        <ul>
+          {{#each parents}}
+            <li class="parent_{{@index}}"><a href="{{{process_uri this}}}" class="link">{{{this}}}</a></li>
+          {{/each}}
+        </ul>
+      {{/if}}
+      {{#if narrower}}
+        <h2>Children <code>skos:narrower</code></h2>
+        <ul>
+        {{#each narrower}}
+          <li><a href="{{{process_uri this}}}" class="link">{{{this}}}</a></li>
+        {{/each}}
+        </ul>
+      {{/if}}
+      {{#if exactMatch}}
+        <h2><code>skos:exactMatch</code></h2>
+        <ul>
+      	{{#each exactMatch}}
+        	<li><a href="{{{process_uri this}}}" {{{is_internal_link this}}}>{{{this}}}</a></li>
+     	 	{{/each}}
+        </ul>
+      {{/if}}
+      {{#if closeMatch}}
+        <h2><code>skos:closeMatch</code></h2>
+        <ul>
+      	{{#each closeMatch}}
+        	<li><a href="{{{process_uri this}}}" {{{is_internal_link this}}}>{{{ this}}}</a></li>
+     	 	{{/each}}
+        </ul>
+      {{/if}}
+
+    </detail>
+  </div>
+</div>

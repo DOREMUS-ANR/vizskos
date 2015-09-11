@@ -1,0 +1,219 @@
+{
+ "name": "Thesaurus MIMO",
+ "children": [
+    {
+     "name": "Electronic instruments",
+     "children": [
+        {
+         "name": "Electronic",
+         "children": [
+            {"name": "Accord guitar"},
+            {"name": "Accordion-synthesizer"},
+            {"name": "Assemblage of electronic modules"},
+            {"name": "Beatbox"},
+            {"name": "Clavioline"},
+            {"name": "Croix sonore"},
+            {"name": "Gmebaphone"},
+            {"name": "Gmebogosse"},
+            {"name": "Heliophon"},
+            {"name": "Mellotron"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Elements of musical instruments",
+     "children": [
+        {
+         "name": "Beaters",
+         "children": [
+            {"name": "Beater"}
+          ]
+        },
+        {
+         "name": "Bows",
+         "children": [
+            {"name": "Bow"}
+          ]
+        },
+        {
+         "name": "Mouthpieces",
+         "children": [
+            {"name": "Mouthpiece"}
+          ]
+        },
+        {
+         "name": "Plectra",
+         "children": [
+            {"name": "Plectrum"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Keyboard instruments",
+     "children": [
+        {
+         "name": "Clavichords",
+         "children": [
+            {"name": "Beater"}
+          ]
+        },
+        {
+         "name": "Harpsichords",
+         "children": [
+            {"name": "Arpicordo"},
+            {"name": "Clavecin brisé"},
+            {"name": "Clavecin oculaire"},
+            {"name": "Clavicytherium"},
+            {"name": "Claviorgan"},
+            {"name": "Digital harpsichord"}
+          ]
+        },
+        {
+         "name": "Mechanical",
+         "children": [
+            {"name": "Mechanical pianoforte"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Wind instruments",
+     "children": [
+        {
+         "name": "Accordions",
+         "children": [
+            {"name": "Accordion", "size": 3938},
+            {"name": "Bandoneon", "size": 3812},
+            {"name": "Basse-aux-pieds", "size": 6714},
+            {"name": "Cecilium", "size": 743}
+         ]
+        },
+        {
+         "name": "Bagpipes",
+         "children": [
+            {"name": "Askomandoura", "size": 3534},
+            {"name": "Bagpipe", "size": 5731},
+            {"name": "Bayan", "size": 7840},
+            {"name": "Biniou", "size": 5914},
+            {"name": "Bladder pipe", "size": 3416}
+         ]
+        },
+        {
+         "name": "Bassoons",
+         "children": [
+            {"name": "Alto dulcian", "size": 7074}
+         ]
+        }
+      ]
+    },
+    {
+     "name": "Electronic",
+     "children": [
+        {
+         "name": "Electronic",
+         "children": [
+            {"name": "Accord guitar"},
+            {"name": "Accordion-synthesizer"},
+            {"name": "Assemblage of electronic modules"},
+            {"name": "Beatbox"},
+            {"name": "Clavioline"},
+            {"name": "Croix sonore"},
+            {"name": "Gmebaphone"},
+            {"name": "Gmebogosse"},
+            {"name": "Heliophon"},
+            {"name": "Mellotron"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Elements of musical",
+     "children": [
+        {
+         "name": "Beaters",
+         "children": [
+            {"name": "Beater"}
+          ]
+        },
+        {
+         "name": "Bows",
+         "children": [
+            {"name": "Bow"}
+          ]
+        },
+        {
+         "name": "Mouthpieces",
+         "children": [
+            {"name": "Mouthpiece"}
+          ]
+        },
+        {
+         "name": "Plectra",
+         "children": [
+            {"name": "Plectrum"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Keyboard",
+     "children": [
+        {
+         "name": "Clavichords",
+         "children": [
+            {"name": "Beater"}
+          ]
+        },
+        {
+         "name": "Harpsichords",
+         "children": [
+            {"name": "Arpicordo"},
+            {"name": "Clavecin brisé"},
+            {"name": "Clavecin oculaire"},
+            {"name": "Clavicytherium"},
+            {"name": "Claviorgan"},
+            {"name": "Digital harpsichord"}
+          ]
+        },
+        {
+         "name": "Mechanical",
+         "children": [
+            {"name": "Mechanical pianoforte"}
+          ]
+        }
+      ]
+    },
+    {
+     "name": "Wind",
+     "children": [
+        {
+         "name": "Accordions",
+         "children": [
+            {"name": "Accordion", "size": 3938},
+            {"name": "Bandoneon", "size": 3812},
+            {"name": "Basse-aux-pieds", "size": 6714},
+            {"name": "Cecilium", "size": 743}
+         ]
+        },
+        {
+         "name": "Bagpipes",
+         "children": [
+            {"name": "Askomandoura", "size": 3534},
+            {"name": "Bagpipe", "size": 5731},
+            {"name": "Bayan", "size": 7840},
+            {"name": "Biniou", "size": 5914},
+            {"name": "Bladder pipe", "size": 3416}
+         ]
+        },
+        {
+         "name": "Bassoons",
+         "children": [
+            {"name": "Alto dulcian", "size": 7074}
+         ]
+        }
+      ]
+    }
+  ]
+}

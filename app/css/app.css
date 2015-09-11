@@ -1,0 +1,297 @@
+@charset "UTF-8";
+/* CSS Document */
+
+body {
+  padding: 0;
+  margin: 0;
+}
+.vizskos {
+  overflow: hidden;
+}
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+.hs .node circle {
+  stroke: #98a183;
+}
+.node text:hover,
+.node.selected text{
+  stroke: #ff009c;
+}
+
+.node circle.children{
+  fill: lightsteelblue;
+}
+.hs .node circle.children{
+  fill: #afb79d;
+}
+
+.node circle:hover{
+  fill: steelblue !important;
+}
+.hs .node circle:hover {
+  fill: #98a183 !important;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node text {
+  transition:all 0.1s ease;
+  -webkit-transition:all 0.1s ease;
+  -moz-transition:all 0.1s ease;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.5em ;
+}
+.parent text{
+  font-size: 0.5em ;
+}
+.child text{
+  font-size: 0.35em ;
+  letter-spacing: 0.13em;
+}
+.arc{
+	fill:#fff;
+}
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+.child:hover text {
+  
+}
+.parent:hover text{
+ 
+}
+.node.visited text{
+  fill:steelblue ;
+}
+.node.active text{
+  fill:#f26168;
+  font-size: 1.3em;
+}
+
+
+nav {
+  padding: 0;
+  margin: 0;
+}
+
+
+.chart {
+  display: block;
+  margin: auto;
+  margin-top: 60px;
+  font-size: 11px;
+}
+
+rect {
+  stroke: #eee;
+  fill: #aaa;
+  fill-opacity: .8;
+}
+rect text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.5em;
+}
+
+rect.parent {
+  cursor: pointer;
+  fill: steelblue;
+}
+
+
+
+
+
+
+body{
+	background-color: #f7f7f7;
+}
+header {
+  position: absolute;
+}
+header a{
+  display: block;
+  padding: 10px;
+}
+header form{
+  padding-left: 10px;
+}
+
+article .concept header {
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  border-bottom: 1px solid #ccc; 
+  background: steelblue;
+  position: relative;
+  overflow: auto;
+}
+article .concept header.hs {
+  background: #98a183;
+}
+article .concept p.context{
+  line-height: 1.66em;
+  font-size: 0.7em;
+  padding: 0;
+  clear: none;
+}
+article .concept p.context a{
+  color: #dedede;
+  padding: 4px 0 0px 30px;
+}
+article .concept p.context a:hover{
+  color: #fff;
+  text-decoration: none;
+}
+article .concept .close{
+  float: right;
+  padding: 5px 15px;
+  color: #dedede;
+  font-size: 0.75em;
+}
+article .concept .body nav{
+  float: right;
+  padding-right: 20px;
+}
+article .concept .next,
+article .concept .prev {
+  padding: 40px 10px 5px 10px;
+  display: inline-block;
+  color: #ccc;
+  font-size: 0.75em;
+}
+article .concept .close:hover{
+  text-decoration: none;
+  color: #fff;
+}
+article .concept .next:hover,
+article .concept .prev:hover {
+  text-decoration: none;
+  color: #aaa;
+}
+article .concept {
+	
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  width: 35%;
+  height: 80%;
+}
+article .concept .body {
+	height: 90%;
+  overflow-y: scroll;
+  font-family: Arial, Helvetica, sans-serif;
+  background: rgba(255, 255, 255, 0.9);
+}
+article.closed .body {
+  display: none;
+}
+
+
+article .concept p.type{
+  padding: 0;
+}
+
+
+article .concept hgroup,
+article .concept detail{
+  padding: 0px 30px 0 30px;
+  display: block;
+  margin: 0;
+}
+article .concept detail{
+  padding-bottom: 30px;
+}
+article .concept hgroup{
+    padding-top: 20px;
+    font-size: 1em;
+}
+article .concept h1{
+  font-size: 1em;
+  font-weight: normal;
+  padding: 0;
+  margin: 0;
+  color: #ff009c;
+}
+article .concept h2{
+  font-size: 0.7em;
+  font-weight: bold;
+  padding: 0;
+  margin: 0;
+  clear: both;
+}
+article .concept hgroup code{
+  font-size: 0.77em;
+  font-weight: bold;
+}
+article .concept p,
+article .concept li,
+article .concept dd,
+article .concept dt{
+  font-size: 0.7em;
+  font-weight: normal;
+  list-style-position: inside;
+}
+article .concept dd,
+article .concept dt{
+  float: left;
+}
+article .concept dt{
+  clear: left;
+}
+article .concept code{
+  font-size: 1.1em;
+}
+article .concept p,
+article .concept ul,
+article .concept dl{
+  clear: both;
+  padding: 0 0 17px 0;
+  overflow: auto;
+  margin: 0;
+}
+
+article .concept li.parent_0,
+article .concept li.parent_1,
+article .concept li.parent_2,
+article .concept li.parent_3,
+article .concept li.parent_4,
+article .concept li.parent_5,
+article .concept li.parent_6{
+  list-style-type: none;
+}
+article .concept li.parent_0:before{
+  content: "➤ ";
+}
+article .concept li.parent_1:before{
+  content: "➤➤ ";
+}
+article .concept li.parent_2:before{
+  content: "➤➤➤ ";
+}
+article .concept li.parent_3:before{
+  content: "➤➤➤➤ ";
+}
+article .concept li.parent_4:before{
+  content: "➤➤➤➤➤ ";
+}
+article .concept li.parent_5:before{
+  content: "➤➤➤➤➤➤ ";
+}
+
+article .concept a{
+  color: #2b6291;
+  text-decoration: none;
+}
+article .concept a:hover,
+article .concept a:focus{
+  text-decoration: underline;
+}
+.closed article .concept detail {
+  display: none;
+}
