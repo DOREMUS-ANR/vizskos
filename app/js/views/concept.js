@@ -23,7 +23,7 @@ module.exports = View.extend({
     getRenderData: function getConceptRenderData(){
       this.model = this.collection.getActiveConcept();
       //console.log("le modele",themodel.attributes);
-      return this.model ? $.extend({ language :'en' }, this.model.attributes) : {};
+      return this.model ? $.extend({ language :'en' }, this.model.attributes) : this.collection.getActiveThesaurus();
     },
     // Close the concept section
     close: function closeConcept(element) {
@@ -41,7 +41,7 @@ module.exports = View.extend({
       element.preventDefault();
     },
     conceptToggled: function conceptToggledConcept(element) {
-      if(this.collection.conceptClosed){
+      if(this.collection.conceptClosed && this.collection.activeURI){
         this.$el.addClass("closed");
       }else{
         this.$el.removeClass("closed");
@@ -49,7 +49,7 @@ module.exports = View.extend({
     },
     // Open / reduce the concept section
     activateLink: function activateLinkConcept(element) {
-      application.router.navigate($(element.currentTarget).attr("href"), {trigger : true});
+      application.router.navigate(application.processUri($(element.currentTarget).attr("href")), {trigger : true});
       element.preventDefault();
     }
 });

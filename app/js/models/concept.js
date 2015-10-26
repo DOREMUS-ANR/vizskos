@@ -2,12 +2,13 @@ module.exports = Backbone.Model.extend({
 
   // Default
   defaults: {
-
+    concept : true
   },
   initialize: function initializeConcept(){
+    //console.log("bonjour", this.attributes);
   	this.set('uri', this.attributes["@id"]);
-  	var urlParts = this.attributes["@id"].split("/");
-    this.set('id', (urlParts[4] &&  parseInt(urlParts[4], 10) > 0) ? parseInt(urlParts[4], 10) :null);
+  	var urlParts = this.attributes["@id"].split("/").join("");
+    this.set('id', urlParts.substring((urlParts.length -10), urlParts.length));
     this.set('type', this.attributes["@type"]);
 
     if(this.attributes["skos:inScheme"]){
@@ -32,7 +33,6 @@ module.exports = Backbone.Model.extend({
       }else{
         this.set('hasTopConcept', this.attributes["skos:hasTopConcept"]["@id"]);
       }
-      //
     }
     if(this.attributes["skos:narrower"]){
       this.set('narrower', Array.isArray(this.attributes["skos:narrower"])? this.attributes["skos:narrower"] : [this.attributes["skos:narrower"]]);

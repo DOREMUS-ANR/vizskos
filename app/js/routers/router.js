@@ -2,9 +2,10 @@ var application = require('../application');
 module.exports = Backbone.Router.extend({
     routes:{
       "about" : "showAbout",
-      "(http://data.mimo-db.eu/):thesaurus(/)" : "showConcept",
-      "(http://data.mimo-db.eu/):thesaurus(/:id)(/)" : "showConcept",
-      "(http://data.mimo-db.eu/):thesaurus(/:id)(/:conceptName)(/)" : "showConcept",
+      "uri=:uri" : "showURI",
+      //"(http://data.mimo-db.eu/):thesaurus(/)" : "showConcept",
+      //"(http://data.mimo-db.eu/):thesaurus(/:id)(/)" : "showConcept",
+      //"(http://data.mimo-db.eu/):thesaurus(/:id)(/:conceptName)(/)" : "showConcept",
       "*other"    : "defaultRoute"
     },
     
@@ -26,9 +27,17 @@ module.exports = Backbone.Router.extend({
       
     },
 
+    showURI: function showURI( uri ) {
+      //console.log('showURI. You attempted to reach:' + uri);
+      application.collection.showURI(uri);
+      Backbone.history.checkUrl();
+    },
+
     defaultRoute: function(other){
-      //console.log('Invalid. You attempted to reach:' + other);
-      application.collection.setActiveURI("InstrumentsKeywords", null);
+      //console.log('You attempted to reach:' + other);
+      other = other.replace("uri=", "");
+      application.collection.setActiveURI(other);
+      Backbone.history.checkUrl();
     }
 
 });

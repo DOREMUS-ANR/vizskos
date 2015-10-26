@@ -1,7 +1,7 @@
 {
   "name": "vizskos",
   "description": "A Visualizer for SKOS-based Thesaurus",
-  "version": "0.1",
+  "version": "1.0.0",
   "homepage": "http://www.doremus.org",
   "devDependencies": {
     "auto-reload-brunch": "^1.7.8",

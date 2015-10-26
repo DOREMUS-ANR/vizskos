@@ -123,7 +123,7 @@ module.exports = View.extend({
 
         var nodeEnter = node.enter()
           .append("svg:g")
-            .attr("class", function(d) { return d.children ? "node parent node_" + d.rid : "node child node_" + d.rid; })
+            .attr("class", function(d) { return d.children ? "node parent node_" + d.id : "node child node_" + d.id; })
             .attr("transform", function(d,i) {return  "rotate(" + (source.x - 90) + ")translate(" + (source.y ) + ")"; });
           
         var nodeEnterCircle = nodeEnter.append("svg:circle")
@@ -179,18 +179,18 @@ module.exports = View.extend({
       //console.log(d);
     },
     showSelectedNode: function showSelectedNodeNav(uri) {
-      if(this.collection.loaded){
+      //if(this.collection.loaded){
         d3.select(".node.selected").classed("selected", false);
         var themodel = this.collection.getActiveConcept();
         if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
-      }
+      //}
     },
     selectNode: function selectNodeNav(d, i) {
-
-      application.router.navigate(d.id, {trigger : true});
+      //console.log("on va voir", application.processUri(d.id));
+      application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      if(this.collection.activeConceptId == d.rid) {
+      if(this.collection.activeConceptId == d.uri) {
         this.collection.toggleConcept(true);
       }
       d3.event.stopPropagation();

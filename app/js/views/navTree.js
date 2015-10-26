@@ -8,6 +8,7 @@ module.exports = View.extend({
       this.i = 0;
       this.duration = 750;
     },
+
     resize: function resizeNav() {
       this.initSize();
  
@@ -169,11 +170,11 @@ module.exports = View.extend({
         d3.select(".node.selected").classed("selected", false);
         var themodel = this.collection.getActiveConcept();
         if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
-      }      
+      }
     },
     selectNode: function selectNodeNav(d, i) {
       //
-      application.router.navigate(d.id, {trigger : true});
+      application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
       if(this.collection.activeConceptId == d.rid) {

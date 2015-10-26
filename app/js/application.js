@@ -1,5 +1,5 @@
 var Application = {
-  domainPattern : /http:\/\/data.mimo-db.eu/g,
+  domainPattern : /http:\/\/[\w\.]*\//g,
   initialize: function initializeApplication() {
    
   	var AppView = require('./views/app');
@@ -12,12 +12,19 @@ var Application = {
   
   },
   processUri : function processUriApplication(uri){
-    //console.log(uri);
-  	if(uri.search(this.domainPattern) != -1){
+    //if the beginning of the uri is the same as the location    
+    if(uri.search(location.origin) !== -1){
+      return uri.replace(location.origin, "");
+    }else if(uri.search("uri=http") === -1){
+      return uri.replace("http", "uri=http");
+    }else{
+      return uri;
+    }
+  	/*if(uri.search(this.domainPattern) != -1){
   		return uri.replace(this.domainPattern, '');
   	}else{
   		return uri;
-  	}
+  	}*/
   }
 };
 

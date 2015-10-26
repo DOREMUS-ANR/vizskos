@@ -8,7 +8,7 @@ Handlebars.registerHelper('label_with_language', function(labels, language) {
 		var filteredLabels = labels.filter(function(element){
 			return element["@language"] === language;
 		})
-		return filteredLabels[0]["@value"];
+		if(filteredLabels[0]) return filteredLabels[0]["@value"];
 	}
 	
 	//otherwise get "pivot" element, the only one which is a string 
@@ -45,7 +45,7 @@ Handlebars.registerHelper('process_uri', function(uri) {
 
 Handlebars.registerHelper('is_internal_link', function(uri) {
 	if(!uri) return;
-  	if(uri.search(application.domainPattern) != -1){
+  	if(application.collection.matchAnyThesaurus(uri)){
   		return " class='link'";
   	}else{
   		return " target='_blank'";

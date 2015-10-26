@@ -6,13 +6,29 @@ module.exports = Backbone.Collection.extend({
   model: concept,
   loaded: false,
   activeConceptId : null,
+  activeURI : null,
   activeThesaurus : null,
   thesaurusNames : {'InstrumentsKeywords' : 'MIMO Thesaurus', 'hs': 'Sachs & Hornbostel classification'},
-  url: 'http://data.mimo-db.eu:9091/',
+  url: 'http://localhost:9091/',
+  thesauri : [
+    {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint': 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
+    {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
+  ],
+  activeThesaurusId : null,
   viewTypes : [{ 'id' : 1, 'name' : 'circular tree'},{ 'id' : 2, 'name' : 'tree'}],
   viewType : (parseInt(sessionStorage.getItem("viewType")) || 1),
   //viewType :  1,
   conceptClosed : false,
+  context : {
+    "skos": "http://www.w3.org/2004/02/skos/core#",
+    "skos:Concept": {"@type": "@id"},
+    "skos:inScheme": {"@type": "@id"},
+    "skos:narrower": {"@type": "@id"},
+    "skos:exactMatch": {"@type": "@id"},
+    "skos:broader": {"@type": "@id"},
+    "skos:closeMatch": {"@type": "@id"},
+    "skos:topConceptOf": {"@type": "@id"}
+  },
 
   initialize : function(models, options){
 
@@ -21,99 +37,132 @@ module.exports = Backbone.Collection.extend({
     }
  
   },
-  loadData : function loadDataThesaurus(conceptUri){
- 
-    var context = {
-      "skos": "http://www.w3.org/2004/02/skos/core#",
-      "skos:Concept": {"@type": "@id"},
-      "skos:inScheme": {"@type": "@id"},
-      "skos:narrower": {"@type": "@id"},
-      "skos:exactMatch": {"@type": "@id"},
-      "skos:broader": {"@type": "@id"},
-      "skos:closeMatch": {"@type": "@id"},
-      "skos:topConceptOf": {"@type": "@id"}
-    };
-    if(conceptUri){
-      this.loaded = false;
-      $.ajax({
-        'url': this.url + "sparql/describe?uri=" + conceptUri,
-        'headers': {'Accept' : 'application/ld+json'},
-        'context': this
-      }).done(function(collection){
-        jsonld.compact(collection, context, function(err, compacted) {  
-          this.prepareData(compacted["@graph"]);
-          this.trigger("conceptChanged", this);
-          this.loadData();
-        }.bind(this));
-      }).fail(function(error){
-        this.loadData();
-      });
-    }else{
-
-      $.ajax({
-        'url': this.url + this.activeThesaurus,
-        'headers': {'Accept' : 'application/ld+json'},
-        'context': this
-      }).done(function(collection){
-
-        jsonld.compact(collection, context, function(err, compacted) {  
-          this.prepareData(compacted["@graph"]);
-          this.loaded = true;
-          this.trigger("navChanged", this);
-          this.trigger("conceptChanged", this);
-
-        }.bind(this));
-      });
-    }
-  },
 
   getActiveConcept : function getActiveConceptThesaurus(){
-    //console.log("connait-on l'id ?", this.activeConceptId);
+    
     var theconcept = this.models.filter(function(element){
-      return element.attributes.id === this.activeConceptId;
+      return element.attributes.uri === this.activeURI;
     }.bind(this));
-    //console.log("result ", theconcept[0]);
+
+    //console.log("oh ?", this.activeURI, theconcept[0]);
     return theconcept[0] || null;
   },
-
+  getActiveThesaurus : function getActiveThesaurus(){
+    var theconcept = _.findWhere(this.models, {'@type' : 'ConceptScheme'});
+    if(theconcept === undefined){
+      theconcept = {
+        "conceptScheme" : this.activeThesaurus.id,
+        "type" : "skos:ConceptScheme",
+        "prefLabel" : [this.activeThesaurus.name]
+      }
+    }
+    return theconcept;
+  },
   getViewTypes : function getViewTypesThesaurus(){
     this.viewTypes.forEach(function (element, index) {
       if(element.id === this.viewType) this.viewTypes[index].selected = true;
     });
-    
     return this.viewTypes;
   },
 
   getThesaurusName : function getThesaurusName(thesaurusUri, conceptUri){
-    //console.log("c'est ici", thesaurusUri, conceptUri);
-    if(thesaurusUri) {
-      var shortUri = application.processUri(thesaurusUri).replace("/", "");
-    }else{
-      var shortUri = application.processUri(conceptUri).replace("/", "");
-    }
-    return {'name' : this.thesaurusNames[shortUri], 'class' : shortUri};
+    return this.activeThesaurus.name;
   },
-
-  setActiveURI : function setActiveURIThesaurus(thesaurus, conceptId, name){
-  
-    this.activeConceptId = conceptId;
+  matchAnyThesaurus : function matchAnyThesaurus(uri){
+    for(var i = 0; i< this.thesauri.length; i++){
+      var thesaurus = this.thesauri[i];
+      if(this.matchPatternThesaurus(thesaurus.pattern, uri)) return true;
+    }
+    return false;
+  },
+  matchPatternThesaurus : function matchPatternThesaurus(pattern, uri){
+     var myRegExp = new RegExp("^" + pattern + "([\\w\\/\\.]*)", "g");
+     return (uri.match(myRegExp) !== null)? true: false;
+  },
+  setActiveURI : function setActiveURIThesaurus(uri){
     
-    if(this.activeThesaurus !== thesaurus){
-      
-      this.activeThesaurus = thesaurus;
-      this.loaded = false;
-      if(!conceptId) {
-        this.loadData();
+    if(uri.search("http") === -1) uri = location.origin + uri;
+    
+    var isFullThesaurus;
+    var whichThesaurus = this.thesauri.filter(function(element){
+      var myRegExp = new RegExp("^" + element.pattern + "([\\w\\/\\.]*)", "g");
+      if (element.id === uri) {
+        isFullThesaurus = true;
+        return element;
+      }else if(this.matchPatternThesaurus(element.pattern, uri)){
+        return element;
+      }
+    }.bind(this));
+    if(whichThesaurus.length>0){
+      if(isFullThesaurus){
+        //is uri one of the thesauri ? load it !
+        this.activeURI = uri;
+        if(this.activeThesaurus === null || this.activeThesaurus.id !== whichThesaurus[0].id){
+          this.activeThesaurus = whichThesaurus[0];
+          this.loadThesaurus(whichThesaurus[0]);
+        }else{
+          this.trigger("conceptChanged", this);
+        }
       }else{
-        this.loadData("http://data.mimo-db.eu/" + thesaurus + "/" + this.activeConceptId + "/" + name );
+        //console.log("??", whichThesaurus.endpoint + uri);
+        //else : if URI uses same pattern as one thesaurus => look for it in the associated SPARQL endpoints       
+        this.loadURI(uri, whichThesaurus[0]);
+      }
+    }else{
+      this.activeThesaurus = this.thesauri[0];
+      this.loadThesaurus(this.thesauri[0]);
+    }
+    //else : search all SPARQL endpoints ?
+    
+  },
+  loadURI : function loadURIThesaurus(uri, thesaurus){
+    //if(){
+    //console.log("on y go", uri, thesaurus);
+    if(uri != this.activeURI){
+      this.activeURI = uri;
+      this.trigger("conceptChanged", this);
+
+      if(this.activeThesaurus === null || this.activeThesaurus.id !== thesaurus.id){
+        //this.reset();
+        this.activeThesaurus = thesaurus;
+        $.ajax({
+          'url': thesaurus.endpoint + uri,
+          'headers': {'Accept' : 'application/ld+json'},
+          'context': this
+        }).done(function(collection){
+          collection = _.where(collection, {'@id': uri});
+          //console.log("collection filtrée ", collection);
+          jsonld.compact(collection, this.context, function(err, compacted) {
+       
+            this.prepareData([compacted]);
+            this.trigger("conceptChanged", this);
+            this.loadThesaurus(thesaurus);
+          }.bind(this));
+        }).fail(function(error){
+          this.loadThesaurus(thesaurus);
+        });
       }
     }
+  },
+  loadThesaurus : function loadThesaurus(thesaurus){
+      this.loaded = false;
+      $.ajax({
+        
+        'url': thesaurus.endpoint + thesaurus.id ,
+        'headers': {'Accept' : 'application/ld+json'},
+        'context': this,
+        'crossDomain' : true
+      }).done(function(collection){
+        jsonld.compact(collection, this.context, function(err, compacted) { 
+          //reset the collection
+          //console.log(compacted);
+          this.prepareData(compacted["@graph"]);
+          this.loaded = true;
+          this.trigger("navChanged", this);
+          this.trigger("conceptChanged", this);
+        }.bind(this));
+      });
     
-    if(this.loaded) {
-      this.toggleConcept(true);
-      this.trigger("conceptChanged", this);
-    }
-
   },
   
   setViewType : function setViewTypeThesaurus(type){
@@ -152,11 +201,11 @@ module.exports = Backbone.Collection.extend({
     }).map(function (childElement){
       var name = that.getName(childElement.attributes["skos:prefLabel"]);
       var children = that.getChildren(childElement.attributes);
-      var result = {"name" : name, id : application.processUri(childElement.attributes["@id"]), rid : childElement.attributes["id"]};
+      var result = {"name" : name, uri : childElement.attributes["@id"], id : childElement.attributes["id"]};
       if(children.length > 0) {
         result.children = children;
         result.size = children.length;
-      }else{  
+      }else{ 
         result.size = 1;
       }
       return result;
@@ -166,8 +215,10 @@ module.exports = Backbone.Collection.extend({
   getParent : function getParentThesaurus(nodeId, data){
     
     var that = this;
-    var element = _.findWhere(data, {"@id" : nodeId});
-    if(element === undefined) return [];
+
+    var element = data.filter(function (element){
+      return element["@id"] === nodeId;
+    });
     var parent = new Array();
 
     if(element.parents){
@@ -225,15 +276,18 @@ module.exports = Backbone.Collection.extend({
       return element;
     });
 
-    //reset the collection
-    this.reset(data);
-
+    if(this.models.length>1){
+      this.reset(data);
+    }else{
+      this.add(data);
+    }
+    
     //creates hierarchical tree for nav
     var filteredTree = this.models.filter(function(element){
       return element.attributes["skos:topConceptOf"] !== undefined;
     }).map(function (element){
       var children = that.getChildren(element.attributes);
-      var result = { "name" : that.getName(element.attributes["skos:prefLabel"]), id : application.processUri(element.attributes["@id"]) , rid : element.attributes["id"]};
+      var result = { "name" : that.getName(element.attributes["skos:prefLabel"]), uri : element.attributes["@id"], id : element.attributes["id"]};
       if(children.length > 0) {
         result.children = children;
         result.size = children.length;
@@ -243,7 +297,7 @@ module.exports = Backbone.Collection.extend({
       return result;
     });
 
-    var dataTree = {"name" : this.thesaurusNames[this.activeThesaurus]};
+    var dataTree = {"name" : this.activeThesaurus.name };
     dataTree.children = filteredTree;
     
     this.counter = 1;
@@ -251,7 +305,7 @@ module.exports = Backbone.Collection.extend({
     //orders the collection according to the tree
     this.findRank(dataTree);
     this.sort();
-
+    //console.log(dataTree);
     this.conceptTree = dataTree;
     this.trigger("dataChanged");
 
