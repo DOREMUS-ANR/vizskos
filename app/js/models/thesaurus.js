@@ -10,8 +10,8 @@ module.exports = Backbone.Collection.extend({
   thesaurusNames : {'InstrumentsKeywords' : 'MIMO Thesaurus', 'hs': 'Sachs & Hornbostel classification'},
   url: 'http://localhost:9091/',
   thesauri : [
-    {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint': 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
-    {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
+    {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/InstrumentsKeywords.json', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
+    {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/HornbostelAndSachs.json', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
   ],
   viewTypes : [{ 'id' : 1, 'name' : 'circular tree'},{ 'id' : 2, 'name' : 'tree'}],
   //viewType :  1,
@@ -58,9 +58,22 @@ module.exports = Backbone.Collection.extend({
   getViewTypes : function getViewTypesThesaurus(){
     var viewType = this.getViewType();
     this.viewTypes.forEach(function (element, index) {
-      if(element.id === viewType) this.selected = true;
+      if(element.id === viewType) {
+        this.selected = true;
+      }else{
+        this.selected = false;
+      }
     });
     return this.viewTypes;
+  },
+  setViewType : function setViewTypeThesaurus(type){
+    sessionStorage.setItem("viewType", type);
+    this.trigger("viewTypeChanged", this);
+  },
+  getViewType : function getViewTypeThesaurus(){
+    var viewType = Number(sessionStorage.getItem("viewType")) || 1;
+    return viewType;
+
   },
 
   getThesaurusName : function getThesaurusName(thesaurusUri, conceptUri){
@@ -126,6 +139,7 @@ module.exports = Backbone.Collection.extend({
         $.ajax({
           'url': thesaurus.endpoint + uri,
           'headers': {'Accept' : 'application/ld+json'},
+          'dataType': 'json',
           'context': this
         }).done(function(collection){
           collection = _.where(collection, {'@id': uri});
@@ -143,35 +157,44 @@ module.exports = Backbone.Collection.extend({
     }
   },
   loadThesaurus : function loadThesaurus(thesaurus){
-      this.loaded = false;
+
+    var loadingCompleted  = function (collection){
+      //console.log("collection", collection);
+      jsonld.compact(collection, this.context, function(err, compacted) { 
+        //reset the collection
+        //console.log("compacted",compacted);
+        this.prepareData(compacted["@graph"]);
+        this.loaded = true;
+        this.trigger("navChanged", this);
+        this.trigger("conceptChanged", this);
+      }.bind(this));
+
+    }
+    this.loaded = false;
+    $.ajax({  
+      'url': thesaurus.endpoint + thesaurus.id ,
+      'headers': {'Accept' : 'application/ld+json'},
+      'context': this,
+      'dataType': 'json',
+      'crossDomain' : true
+    })
+    .done(loadingCompleted)
+    .fail(function(error){
+      //console.log("essai n°3", thesaurus.data)
       $.ajax({
-        
-        'url': thesaurus.endpoint + thesaurus.id ,
-        'headers': {'Accept' : 'application/ld+json'},
+        'url': thesaurus.data ,
         'context': this,
+        'dataType': 'json',
         'crossDomain' : true
-      }).done(function(collection){
-        jsonld.compact(collection, this.context, function(err, compacted) { 
-          //reset the collection
-          //console.log(compacted);
-          this.prepareData(compacted["@graph"]);
-          this.loaded = true;
-          this.trigger("navChanged", this);
-          this.trigger("conceptChanged", this);
-        }.bind(this));
-      });
+      }).done(loadingCompleted)
+      .fail(function(error){
+        console.log(error);
+      })
+    });
     
   },
   
-  setViewType : function setViewTypeThesaurus(type){
-    sessionStorage.setItem("viewType", type);
-    this.trigger("viewTypeChanged", this);
-  },
-  getViewType : function getViewTypeThesaurus(){
-    var viewType = Number(sessionStorage.getItem("viewType")) || 1;
-    return viewType;
-
-  },
+  
   getName : function getName (prefLabels){
     
     if(!prefLabels) return "";
