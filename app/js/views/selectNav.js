@@ -18,9 +18,10 @@ module.exports = View.extend({
         viewTypes : this.collection.getViewTypes()
       };
     },
-    // 
+    //  
     selectNav: function selectNav(event) {
       //console.log("SALUT", Number($(event.target).val()));
+      
       this.collection.setViewType(Number($(event.target).val()));
     }
 

@@ -5,7 +5,6 @@ module.exports = Backbone.Collection.extend({
   
   model: concept,
   loaded: false,
-  activeConceptId : null,
   activeURI : null,
   activeThesaurus : null,
   thesaurusNames : {'InstrumentsKeywords' : 'MIMO Thesaurus', 'hs': 'Sachs & Hornbostel classification'},
@@ -14,9 +13,7 @@ module.exports = Backbone.Collection.extend({
     {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint': 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
     {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
   ],
-  activeThesaurusId : null,
   viewTypes : [{ 'id' : 1, 'name' : 'circular tree'},{ 'id' : 2, 'name' : 'tree'}],
-  viewType : (parseInt(sessionStorage.getItem("viewType")) || 1),
   //viewType :  1,
   conceptClosed : false,
   context : {
@@ -59,8 +56,9 @@ module.exports = Backbone.Collection.extend({
     return theconcept;
   },
   getViewTypes : function getViewTypesThesaurus(){
+    var viewType = this.getViewType();
     this.viewTypes.forEach(function (element, index) {
-      if(element.id === this.viewType) this.viewTypes[index].selected = true;
+      if(element.id === viewType) this.selected = true;
     });
     return this.viewTypes;
   },
@@ -81,7 +79,7 @@ module.exports = Backbone.Collection.extend({
   },
   setActiveURI : function setActiveURIThesaurus(uri){
     
-    if(uri.search("http") === -1) uri = location.origin + uri;
+    if(uri.search("http") === -1) uri = location.origin + "/" + uri;
     
     var isFullThesaurus;
     var whichThesaurus = this.thesauri.filter(function(element){
@@ -166,10 +164,12 @@ module.exports = Backbone.Collection.extend({
   },
   
   setViewType : function setViewTypeThesaurus(type){
-    
-    this.viewType = type;
     sessionStorage.setItem("viewType", type);
     this.trigger("viewTypeChanged", this);
+  },
+  getViewType : function getViewTypeThesaurus(){
+    var viewType = Number(sessionStorage.getItem("viewType")) || 1;
+    return viewType;
 
   },
   getName : function getName (prefLabels){
