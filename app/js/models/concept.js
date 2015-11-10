@@ -4,11 +4,18 @@ module.exports = Backbone.Model.extend({
   defaults: {
     concept : true
   },
+
   initialize: function initializeConcept(){
-    //console.log("bonjour", this.attributes);
+    
+    //handlebars has trouble with properties containing @ or : caracters
+    //sets "clean" properties
+
   	this.set('uri', this.attributes["@id"]);
-  	var urlParts = this.attributes["@id"].split("/").join("");
+  	
+    //generates an id that can be used in classes attached to html elements (without http:// and /)
+    var urlParts = this.attributes["@id"].split("/").join("");
     this.set('id', urlParts.substring((urlParts.length -10), urlParts.length));
+    
     this.set('type', this.attributes["@type"]);
 
     if(this.attributes["skos:inScheme"]){
@@ -17,7 +24,7 @@ module.exports = Backbone.Model.extend({
       this.set('conceptScheme', this.attributes["skos:topConceptOf"]);
     }
     
-    var scheme = this.collection.getThesaurusName(this.get('conceptScheme'), this.attributes["@id"]);
+    var scheme = this.collection.activeThesaurus.name;
     this.set('conceptSchemeName', scheme.name);
     this.set('conceptSchemeClass', scheme.class);
     
@@ -43,44 +50,13 @@ module.exports = Backbone.Model.extend({
     if(this.attributes["skos:closeMatch"] ){
       this.set('closeMatch', Array.isArray(this.attributes["skos:closeMatch"]) ? this.attributes["skos:closeMatch"] : [this.attributes["skos:closeMatch"]]);
     }
-    //this.setPrefLabels();
-    //console.log("on teste", this.getNamedRelatedConcepts(this.attributes["skos:narrower"]));
+    
   },
-  getNamedRelatedConcepts: function getNamedRelatedConcepts(concept) {
-    if(!Array.isArray(concept)) concept = [concept];
-    return concept.map(function(elt){
-      var conceptinfos = _.findWhere(this.collection, {'@id' : elt});
-      //return conceptinfos.prefLabel["pivot"];
-    })
-  },
-  formatLabel: function formatLabelConcept(elt){
-    if(typeof elt === "string") {
-      return {"@language" : pivot, "@value" : elt};
-    }else{
-      return elt;
-    }
-  },
-  setPrefLabels: function setPrefLabelsConcept() {
-    var prefLabel = {};
-    var that = this;
-    var labels = [];
-    if(Array.isArray(this.attributes["skos:prefLabel"])){
-      labels = this.attributes["skos:prefLabel"] ;
-    }else{
-      labels.push(this.attributes["skos:prefLabel"]);
-    }
-    if(labels){
-      labels.forEach(function(elt, index){
-        var label = that.formatLabel(elt);
-        prefLabel[label["@language"]] = label["@value"];
-      });
-      this.set('prefLabels', prefLabel);
-    }
-    console.log("yes", this, prefLabel);
-  },
+  //returns previous or next concept in the collection
   getRelative: function getRelativeConcept(direction) {
     return this.collection.at(this.collection.indexOf(this) + direction);
   },
+  //sort by language in alphabetical order
   sortByLanguage : function sortByLanguageConcept(elt){
     if(elt["@language"]){
       switch(elt["@language"]){

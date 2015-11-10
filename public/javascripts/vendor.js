@@ -22960,7 +22960,7 @@ return jQuery;
       if (connection.readyState) connection.close();
     };
     connection.onclose = function(){
-      window.setTimeout(connect, 1000);
+      //window.setTimeout(connect, 1000);
     };
   };
   connect();

@@ -18,9 +18,7 @@ module.exports = View.extend({
       };
     },
     //  
-    selectNav: function selectNav(event) {
-      //console.log("SALUT", Number($(event.target).val()));
-      
+    selectNav: function selectNav(event) {      
       this.collection.setViewType(Number($(event.target).val()));
     }
 

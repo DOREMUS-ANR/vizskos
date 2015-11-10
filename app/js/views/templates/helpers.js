@@ -22,13 +22,17 @@ Handlebars.registerHelper('label_with_language', function(labels, language) {
 });
 
 Handlebars.registerHelper('translation_language', function(labelObject) {
-	if (!labelObject) return; 
+	if (!labelObject) return;
+	//specific to MIMO thesaurus, pivot language has no language attribute 
+	//(it's a convention, not a real language)
 	if (typeof labelObject  === "string") return "pivot";
 	return labelObject["@language"];
 });
 
 Handlebars.registerHelper('translation_label', function(labelObject) {
-	if (!labelObject) return; 
+	if (!labelObject) return;
+	//specific to MIMO thesaurus, pivot language has no language attribute 
+	//(it's a convention, not a real language)
 	if (typeof labelObject  === "string") return labelObject;
 	return labelObject["@value"];
 });

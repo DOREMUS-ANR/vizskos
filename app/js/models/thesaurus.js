@@ -3,18 +3,20 @@ var concept = require('./concept');
 var application = require('../application');
 module.exports = Backbone.Collection.extend({
   
+  //default properties
+  //Warning : they are reset when all concepts in the collection are reset, 
+  //not when some are added or removed 
+
   model: concept,
   loaded: false,
   activeURI : null,
   activeThesaurus : null,
-  thesaurusNames : {'InstrumentsKeywords' : 'MIMO Thesaurus', 'hs': 'Sachs & Hornbostel classification'},
-  url: 'http://localhost:9091/',
+  comparator: 'rank',
   thesauri : [
     {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/InstrumentsKeywords.json', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
     {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/HornbostelAndSachs.json', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
   ],
   viewTypes : [{ 'id' : 1, 'name' : 'circular tree'},{ 'id' : 2, 'name' : 'tree'}],
-  //viewType :  1,
   conceptClosed : false,
   context : {
     "skos": "http://www.w3.org/2004/02/skos/core#",
@@ -28,24 +30,21 @@ module.exports = Backbone.Collection.extend({
   },
 
   initialize : function(models, options){
-
-    if(!this.loaded && this.activeThesaurus){
-      //this.loadData();
-    }
- 
   },
 
+  //returns the active concept
   getActiveConcept : function getActiveConceptThesaurus(){
-    
     var theconcept = this.models.filter(function(element){
       return element.attributes.uri === this.activeURI;
     }.bind(this));
-
-    //console.log("oh ?", this.activeURI, theconcept[0]);
     return theconcept[0] || null;
   },
+
+  //returns the active conceptScheme 
   getActiveThesaurus : function getActiveThesaurus(){
+    //might be available as a model, depending on how the graph is served
     var theconcept = _.findWhere(this.models, {'@type' : 'ConceptScheme'});
+    //otherwise emulated with settings infos
     if(theconcept === undefined){
       theconcept = {
         "conceptScheme" : this.activeThesaurus.id,
@@ -55,6 +54,8 @@ module.exports = Backbone.Collection.extend({
     }
     return theconcept;
   },
+
+  //gets available kinds of nav (and which one is selected)
   getViewTypes : function getViewTypesThesaurus(){
     var viewType = this.getViewType();
     this.viewTypes.forEach(function (element, index) {
@@ -66,30 +67,35 @@ module.exports = Backbone.Collection.extend({
     });
     return this.viewTypes;
   },
+
+  //sets the kind of nav selected
   setViewType : function setViewTypeThesaurus(type){
     sessionStorage.setItem("viewType", type);
     this.trigger("viewTypeChanged", this);
   },
+
+  //gets the kind of nav selected
   getViewType : function getViewTypeThesaurus(){
     var viewType = Number(sessionStorage.getItem("viewType")) || 1;
     return viewType;
-
   },
 
-  getThesaurusName : function getThesaurusName(thesaurusUri, conceptUri){
-    return this.activeThesaurus.name;
-  },
+  //checks if a URI corresponds to any of the Thesauri available in settings
   matchAnyThesaurus : function matchAnyThesaurus(uri){
     for(var i = 0; i< this.thesauri.length; i++){
       var thesaurus = this.thesauri[i];
-      if(this.matchPatternThesaurus(thesaurus.pattern, uri)) return true;
+      if(this.matchPattern(thesaurus.pattern, uri)) return true;
     }
     return false;
   },
-  matchPatternThesaurus : function matchPatternThesaurus(pattern, uri){
+
+  //checks if a URI matches a pattern
+  matchPattern : function matchPatternThesaurus(pattern, uri){
      var myRegExp = new RegExp("^" + pattern + "([\\w\\/\\.]*)", "g");
      return (uri.match(myRegExp) !== null)? true: false;
   },
+
+  //
   setActiveURI : function setActiveURIThesaurus(uri){
     
     if(uri.search("http") === -1) uri = location.origin + "/" + uri;
@@ -100,7 +106,7 @@ module.exports = Backbone.Collection.extend({
       if (element.id === uri) {
         isFullThesaurus = true;
         return element;
-      }else if(this.matchPatternThesaurus(element.pattern, uri)){
+      }else if(this.matchPattern(element.pattern, uri)){
         return element;
       }
     }.bind(this));
@@ -126,15 +132,14 @@ module.exports = Backbone.Collection.extend({
     //else : search all SPARQL endpoints ?
     
   },
+
   loadURI : function loadURIThesaurus(uri, thesaurus){
-    //if(){
-    //console.log("on y go", uri, thesaurus);
+
     if(uri != this.activeURI){
       this.activeURI = uri;
       this.trigger("conceptChanged", this);
 
       if(this.activeThesaurus === null || this.activeThesaurus.id !== thesaurus.id){
-        //this.reset();
         this.activeThesaurus = thesaurus;
         $.ajax({
           'url': thesaurus.endpoint + uri,
@@ -156,6 +161,8 @@ module.exports = Backbone.Collection.extend({
       }
     }
   },
+
+  //loads thesaurus
   loadThesaurus : function loadThesaurus(thesaurus){
 
     var loadingCompleted  = function (collection){
@@ -194,7 +201,7 @@ module.exports = Backbone.Collection.extend({
     
   },
   
-  
+  //get name of a concept
   getName : function getName (prefLabels){
     
     if(!prefLabels) return "";
@@ -215,6 +222,8 @@ module.exports = Backbone.Collection.extend({
     return name;
 
   },
+
+  //get children concepts of a concept
   getChildren : function getChildren(node){
     
     var that = this;
@@ -235,6 +244,8 @@ module.exports = Backbone.Collection.extend({
     });
 
   },
+
+  //get parent concepts of a concept
   getParent : function getParentThesaurus(nodeId, data){
     
     var that = this;
@@ -271,8 +282,10 @@ module.exports = Backbone.Collection.extend({
     this.trigger("conceptToggled");
 
   },
+
   findRank : function findRankThesaurus (dataObj){
-    
+    //gives a rank property to each concept according to its place in the tree 
+    //to enable prev/next navigation
     if(!dataObj) return false;
     for(var element in dataObj) {
       var themodel = _.findWhere(this.models, function(elt){
@@ -284,9 +297,8 @@ module.exports = Backbone.Collection.extend({
     };
 
   },
-  comparator : function comparatorThesaurus (model) {
-    return model.get('rank');
-  },
+
+  //once the data is loaded, prepares a tree for nav rendering
   prepareData: function prepareDataThesaurus(data){
     var that = this;
 

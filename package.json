@@ -1,6 +1,6 @@
 {
   "name": "vizskos",
-  "description": "A Visualizer for SKOS-based Thesaurus",
+  "description": "A Visualizer for SKOS-based Thesauri",
   "version": "1.0.0",
   "homepage": "http://www.doremus.org",
   "devDependencies": {
