@@ -2,6 +2,7 @@ var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
 
+    //gets window size
     initSize: function initSizeNav() {
       this.height = $(window).height();
       this.width = $(window).width() ;
@@ -9,6 +10,7 @@ module.exports = View.extend({
       this.duration = 750;
     },
 
+    //
     resize: function resizeNav() {
       this.initSize();
  
@@ -63,6 +65,7 @@ module.exports = View.extend({
       }
  
     },
+    //render the nav
     render : function renderNav(source) {
 
       //if(this.collection.loaded){
@@ -153,8 +156,8 @@ module.exports = View.extend({
       });
       //}
     },
+    //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d, i) {
-      //console.log("update",d);
       if (d.children) {
         d._children = d.children;
         d.children = null;              
@@ -163,7 +166,6 @@ module.exports = View.extend({
         d._children = null;
       }
       this.render(d);
-      //console.log(d);
     },
     showSelectedNode: function showSelectedNodeNav(uri) {
       //if(this.collection.loaded){
@@ -173,7 +175,7 @@ module.exports = View.extend({
       //}
     },
     selectNode: function selectNodeNav(d, i) {
-      //
+      //send request to the router
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open

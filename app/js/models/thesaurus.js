@@ -46,6 +46,7 @@ module.exports = Backbone.Collection.extend({
     var theconcept = _.findWhere(this.models, {'@type' : 'ConceptScheme'});
     //otherwise emulated with settings infos
     if(theconcept === undefined){
+      if(!this.activeThesaurus) this.activeThesaurus = this.thesauri[0];
       theconcept = {
         "conceptScheme" : this.activeThesaurus.id,
         "type" : "skos:ConceptScheme",
@@ -55,26 +56,55 @@ module.exports = Backbone.Collection.extend({
     return theconcept;
   },
 
-  //gets available kinds of nav (and which one is selected)
+  //get thesauri (and which one is selected)
+  getThesauri : function getThesauriThesaurus(){
+    var thesaurus = this.getActiveThesaurus();
+    this.thesauri.forEach(function (element, index) {
+      if(element.id === thesaurus.id) {
+        element.selected = true;
+      }else{
+        element.selected = false;
+      }
+    });
+    return this.thesauri;
+  },
+
+  //get selected thesaurus
+  getActiveThesaurus : function getActiveThesaurus(){
+    var thesaurus = this.activeThesaurus || this.thesauri[0];
+    return thesaurus;
+  },
+
+  //set selected thesaurus
+  setActiveThesaurus : function setActiveThesaurus(thesaurus){
+    if(this.activeThesaurus === null || thesaurus.id !== this.activeThesaurus.id){
+      this.activeThesaurus = thesaurus;
+      this.trigger("thesaurusChanged", this);
+    }
+  },
+
+  //get available kinds of nav (and which one is selected)
   getViewTypes : function getViewTypesThesaurus(){
     var viewType = this.getViewType();
     this.viewTypes.forEach(function (element, index) {
       if(element.id === viewType) {
-        this.selected = true;
+        element.selected = true;
       }else{
-        this.selected = false;
+        element.selected = false;
       }
     });
     return this.viewTypes;
   },
 
-  //sets the kind of nav selected
+  //set the kind of nav selected
   setViewType : function setViewTypeThesaurus(type){
-    sessionStorage.setItem("viewType", type);
-    this.trigger("viewTypeChanged", this);
+    if( Number(sessionStorage.getItem("viewType")) !== type){
+      sessionStorage.setItem("viewType", type);
+      this.trigger("viewTypeChanged", this);
+    }
   },
 
-  //gets the kind of nav selected
+  //get the kind of nav selected
   getViewType : function getViewTypeThesaurus(){
     var viewType = Number(sessionStorage.getItem("viewType")) || 1;
     return viewType;
@@ -95,12 +125,15 @@ module.exports = Backbone.Collection.extend({
      return (uri.match(myRegExp) !== null)? true: false;
   },
 
-  //
+  //selected URI sent by the router
   setActiveURI : function setActiveURIThesaurus(uri){
-    
+
+    //if the URI is not complete (cf application.js, ex 3), adds domain
     if(uri.search("http") === -1) uri = location.origin + "/" + uri;
     
+    //the URI is a thesaurus (true) or a concept (false)
     var isFullThesaurus;
+    //in both cases finds which thesaurus
     var whichThesaurus = this.thesauri.filter(function(element){
       var myRegExp = new RegExp("^" + element.pattern + "([\\w\\/\\.]*)", "g");
       if (element.id === uri) {
@@ -121,20 +154,20 @@ module.exports = Backbone.Collection.extend({
           this.trigger("conceptChanged", this);
         }
       }else{
-        //console.log("??", whichThesaurus.endpoint + uri);
-        //else : if URI uses same pattern as one thesaurus => look for it in the associated SPARQL endpoints       
+        //else if URI is a concept, load it first (before loading full nav)    
         this.loadURI(uri, whichThesaurus[0]);
       }
     }else{
+
+      //if URI matches nothing, then load first thesaurus in the settings
       this.activeThesaurus = this.thesauri[0];
       this.loadThesaurus(this.thesauri[0]);
-    }
-    //else : search all SPARQL endpoints ?
-    
+    }    
   },
 
+  //load a single URI
   loadURI : function loadURIThesaurus(uri, thesaurus){
-
+    //if it is not already the current one
     if(uri != this.activeURI){
       this.activeURI = uri;
       this.trigger("conceptChanged", this);
@@ -147,15 +180,18 @@ module.exports = Backbone.Collection.extend({
           'dataType': 'json',
           'context': this
         }).done(function(collection){
-          collection = _.where(collection, {'@id': uri});
-          //console.log("collection filtrée ", collection);
+          var collection = _.where(collection, {'@id': uri});
+          //compacts json-ld (to avoid deep objects that are complicated to handle and sort)
           jsonld.compact(collection, this.context, function(err, compacted) {
-       
+            //build the tree
             this.prepareData([compacted]);
+            //inform listeners
             this.trigger("conceptChanged", this);
+            //load full thesaurus for nav
             this.loadThesaurus(thesaurus);
           }.bind(this));
         }).fail(function(error){
+          //if loading uri fails, load full thesaurus
           this.loadThesaurus(thesaurus);
         });
       }
@@ -164,20 +200,22 @@ module.exports = Backbone.Collection.extend({
 
   //loads thesaurus
   loadThesaurus : function loadThesaurus(thesaurus){
-
+    //callback once loaded
     var loadingCompleted  = function (collection){
-      //console.log("collection", collection);
+      //compacts json-ld (to avoid deep objects that are complicated to handle and sort)
       jsonld.compact(collection, this.context, function(err, compacted) { 
-        //reset the collection
-        //console.log("compacted",compacted);
+        //build the tree
         this.prepareData(compacted["@graph"]);
+        //loading completed
         this.loaded = true;
+        //inform listeners
         this.trigger("navChanged", this);
         this.trigger("conceptChanged", this);
       }.bind(this));
 
     }
     this.loaded = false;
+
     $.ajax({  
       'url': thesaurus.endpoint + thesaurus.id ,
       'headers': {'Accept' : 'application/ld+json'},
@@ -195,7 +233,7 @@ module.exports = Backbone.Collection.extend({
         'crossDomain' : true
       }).done(loadingCompleted)
       .fail(function(error){
-        console.log(error);
+        //console.log(error);
       })
     });
     

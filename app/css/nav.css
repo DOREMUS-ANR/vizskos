@@ -1,0 +1,95 @@
+@charset "UTF-8";
+/* CSS Document */
+
+.vizskos {
+  overflow: hidden;
+}
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+.hs .node circle {
+  stroke: #98a183;
+}
+.node text:hover,
+.node.selected text{
+  stroke: #ff009c;
+}
+
+.node circle.children{
+  fill: lightsteelblue;
+}
+.hs .node circle.children{
+  fill: #afb79d;
+}
+
+.node circle:hover{
+  fill: steelblue !important;
+}
+.hs .node circle:hover {
+  fill: #98a183 !important;
+}
+
+.node {
+  cursor: pointer;
+}
+
+.node text {
+  transition:all 0.1s ease;
+  -webkit-transition:all 0.1s ease;
+  -moz-transition:all 0.1s ease;
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.5em ;
+}
+.parent text{
+  font-size: 0.5em ;
+}
+.child text{
+  font-size: 0.35em ;
+  letter-spacing: 0.13em;
+}
+.arc{
+	fill:#fff;
+}
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+.child:hover text {
+  
+}
+.parent:hover text{
+ 
+}
+.node.visited text{
+  fill:steelblue ;
+}
+.node.active text{
+  fill:#f26168;
+  font-size: 1.3em;
+}
+
+
+.chart {
+  display: block;
+  margin: auto;
+  margin-top: 60px;
+  font-size: 11px;
+}
+
+rect {
+  stroke: #eee;
+  fill: #aaa;
+  fill-opacity: .8;
+}
+rect text {
+  font-family: Arial, Helvetica, sans-serif;
+  font-size: 0.5em;
+}
+
+rect.parent {
+  cursor: pointer;
+  fill: steelblue;
+}

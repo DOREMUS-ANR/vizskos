@@ -10,11 +10,14 @@ module.exports = View.extend({
     //
     afterInit: function afterInitSelectNav(){
       this.listenTo(this.collection, 'dataChanged', this.render);
+      this.listenTo(this.collection, 'viewTypeChanged', this.render);
+      this.listenTo(this.collection, 'thesaurusChanged', this.render);
     },
     //
     getRenderData: function getRenderDataSelectNav(){
       return{
-        viewTypes : this.collection.getViewTypes()
+        viewTypes : this.collection.getViewTypes(),
+        thesauri : this.collection.getThesauri()
       };
     },
     //  

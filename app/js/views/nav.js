@@ -3,8 +3,7 @@ var NavCircle = require('./navCircle');
 var NavTree = require('./navTree');
 module.exports = View.extend({
 
-
-    // The NavView listens for changes to its model, re-rendering.
+    // set up listeners
     afterInit: function afterInitNav(){
      
       this.listenTo(this.collection, 'viewTypeChanged', this.render);
@@ -12,10 +11,10 @@ module.exports = View.extend({
 
     },
     
-    // Re-renders the titles of the todo item.
+    // the nav does not render a handlebars template
+    // instead it instanciates a new object to deal with d3js
     render: function renderNav() {
       this.$el.empty();
-      
       if(this.collection.getViewType() === 1){
         this.navView = new NavCircle({collection : this.collection}).preRender();
       }else if(this.collection.getViewType() === 2){

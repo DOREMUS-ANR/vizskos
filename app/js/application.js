@@ -6,11 +6,11 @@ var Application = {
   	var Router = require('./routers/router');
   	var Thesaurus = require('./models/thesaurus');
     
-    //create the collection of concepts
+    //create the collection of concepts 
     this.collection = new Thesaurus();
     
     //create the app view, with a reference to the collection and this application
-    this.appView = new AppView({collection : this.collection, attributes : { application: this }}).render();
+    this.appView = new AppView({collection : this.collection, attributes : { application: this }});
     
     //create the router, with a reference to the collection and this application
     this.router = new Router({collection : this.collection, attributes : { application: this }});

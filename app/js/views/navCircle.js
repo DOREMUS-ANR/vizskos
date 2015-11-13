@@ -166,8 +166,8 @@ module.exports = View.extend({
         });
       }
     },
+    //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d, i) {
-      
       if (d.children) {
         d._children = d.children;
         d.children = null;              
@@ -176,17 +176,16 @@ module.exports = View.extend({
         d._children = null;
       }
       this.render(d);
-      //console.log(d);
     },
+    //highlight selected node (listener conceptChanged)
     showSelectedNode: function showSelectedNodeNav(uri) {
-      //if(this.collection.loaded){
-        d3.select(".node.selected").classed("selected", false);
-        var themodel = this.collection.getActiveConcept();
-        if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
-      //}
+      d3.select(".node.selected").classed("selected", false);
+      var themodel = this.collection.getActiveConcept();
+      if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
     },
+    //when a node is clicked
     selectNode: function selectNodeNav(d, i) {
-      //console.log("on va voir", application.processUri(d.id));
+      //send request to the router
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open

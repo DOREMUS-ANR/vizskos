@@ -13,33 +13,34 @@ module.exports = View.extend({
     
     template : require('./templates/concept.hbs'),
     
-    // The ConceptView listens for changes to its model, re-rendering. 
-    // Since there's only one **Concept** displayed in detail 
-
+    //set up listeners
     afterInit: function afterInitConcept(){
       this.listenTo(this.collection, 'conceptChanged', this.render);
       this.listenTo(this.collection, 'conceptToggled', this.conceptToggled);
     },
+    //get information to render the template
     getRenderData: function getConceptRenderData(){
       this.model = this.collection.getActiveConcept();
-      //console.log("le modele",themodel.attributes);
       return this.model ? $.extend({ language :'en' }, this.model.attributes) : this.collection.getActiveThesaurus();
     },
-    // Close the concept section
+    //close the concept section
     close: function closeConcept(element) {
       this.collection.toggleConcept();
       element.preventDefault();
     },
+    //show next concept
     next: function nextConcept(element) {
       var newmodel = this.model.getRelative(1);
       application.router.navigate(application.processUri(newmodel.attributes["@id"]), {trigger : true});
       element.preventDefault();
     },
+    //show previous concept
     prev: function prevConcept(element) {
       var newmodel = this.model.getRelative(-1);
       application.router.navigate(application.processUri(newmodel.attributes["@id"]), {trigger : true});
       element.preventDefault();
     },
+    //show / hide concept
     conceptToggled: function conceptToggledConcept(element) {
       if(this.collection.conceptClosed && this.collection.activeURI){
         this.$el.addClass("closed");
