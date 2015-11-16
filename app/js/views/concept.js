@@ -17,6 +17,7 @@ module.exports = View.extend({
     afterInit: function afterInitConcept(){
       this.listenTo(this.collection, 'conceptChanged', this.render);
       this.listenTo(this.collection, 'conceptToggled', this.conceptToggled);
+      this.listenTo(this.collection, 'dataChanged', this.render);
     },
     //get information to render the template
     getRenderData: function getConceptRenderData(){
@@ -42,7 +43,7 @@ module.exports = View.extend({
     },
     //show / hide concept
     conceptToggled: function conceptToggledConcept(element) {
-      if(this.collection.conceptClosed && this.collection.activeURI){
+      if(this.collection.conceptClosed){
         this.$el.addClass("closed");
       }else{
         this.$el.removeClass("closed");

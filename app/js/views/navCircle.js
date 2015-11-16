@@ -18,7 +18,7 @@ module.exports = View.extend({
       this.y = d3.scale.linear().range([0, this.height]);
       this.duration = 750;
     },
-    resize: function resizeNav() {
+    setSize: function setSizeNav(){
       this.initSize();
       
       this.cluster
@@ -31,68 +31,81 @@ module.exports = View.extend({
       this.vis
         .attr("width", this.width)
         .attr("height", this.height);
-
-      this.render();
+    },
+    resize: function resizeNav() {
+      
+      this.setSize();
+      this.render(this.root);
     },
 
     // The NavView listens for changes to its model, re-rendering.
     afterInit: function afterInitNav(){
-     
-      $(window).on("resize", this.resize.bind(this));
-
+      this.preRender();
       this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
-      this.listenTo(this.collection, 'navChanged', this.preRender);
+      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
 
+      $(window).on("resize", this.resize.bind(this));
+      
     },
-    
+    dataChanged: function dataChanged() {
+      this.root = this.collection.conceptTree;
+      if(this.root){
+        this.root.x0 = this.height / 2;
+        this.root.y0 = 0;
+
+        this.preRender();
+      }
+    },
     // Re-renders the titles of the todo item.
     preRender: function preRenderNav() {
       
-      if(this.collection.loaded){
-        
-        this.initSize();
+      //if(this.collection.loaded){
      
-      this.cluster = d3.layout.tree()
-        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
- 
-      //
-      this.diagonal = d3.svg.diagonal.radial()
-        .projection( function(d) { return [d.y, d.x / 180 * Math.PI]; } );
-      //
-      
-      this.svg = d3.select("#vizskos .nav");
-      this.vis =  d3.select("#vizskos .nav svg");
-      if(this.vis) this.vis.remove();
+        this.cluster = d3.layout.tree()
+          .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
+   
+        //
+        this.diagonal = d3.svg.diagonal.radial()
+          .projection( function(d) { return [d.y, d.x / 180 * Math.PI]; } );
+        //
+        
+        this.svg = d3.select("#vizskos .nav");
+        //this.svg.empty();
+        this.vis =  d3.select("#vizskos .nav svg");
+        if(this.vis) this.vis.remove();
 
-      this.vis = this.svg.append("svg:svg");
-      //
-      this.main = this.vis
-        .append("svg:g")
-          .attr("class", "main " + this.collection.activeThesaurus);
-      //partition view
-      this.partition = d3.layout.partition()
-        .value(function(d) { return d.size; });
+        this.vis = this.svg.append("svg:svg");
+        //
+        this.main = this.vis
+          .append("svg:g")
+            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
 
-      this.zoom = d3.behavior.zoom()
-        .on("zoom", this.changeScale.bind(this));
+        //partition view
+        this.partition = d3.layout.partition()
+          .value(function(d) { return d.size; });
 
-
-        this.root = this.collection.conceptTree;
-        this.root.x0 = this.height / 2;
-        this.root.y0 = 0;
-          
+        this.zoom = d3.behavior.zoom()
+          .on("zoom", this.changeScale.bind(this));
+        
         this.arc = this.main.append("svg:path")
           .attr("class", "arc");
+
+        this.setSize();
         
-        //console.log(this.conceptTree);
-        this.render(this.root);
-        this.resize();
-        this.showSelectedNode();
-      }
- 
+
+        if(this.root) this.render(this.root);
+        
+        
+      //}
+     
     },
     render : function renderNav(source) {
-      if(this.collection.loaded){
+      
+      if(source !== undefined){
+      
+      //console.log("la source", source, source.x, Number.isNaN(source.x));
+     
+
         var nodes = this.cluster.nodes(this.collection.conceptTree);
         var links = this.cluster.links(nodes);
         var whiteRadius = this.whiteRadius;
@@ -100,7 +113,7 @@ module.exports = View.extend({
         this.main
             .attr("transform", "translate(" + (100 + this.xRadius ) + "," + (25 + this.yRadius) + ")");
 
-        this.main.call(this.zoom);
+        //this.main.call(this.zoom);
 
         var node = this.main.selectAll("g.node").data(nodes);
         var link = this.main.selectAll("path.link").data(links);
@@ -124,8 +137,9 @@ module.exports = View.extend({
         var nodeEnter = node.enter()
           .append("svg:g")
             .attr("class", function(d) { return d.children ? "node parent node_" + d.id : "node child node_" + d.id; })
-            .attr("transform", function(d,i) {return  "rotate(" + (source.x - 90) + ")translate(" + (source.y ) + ")"; });
-          
+            .attr("transform", function(d,i) { return  "rotate(" + (source.x - 90) + ")translate(" + (source.y ) + ")"; });
+        
+
         var nodeEnterCircle = nodeEnter.append("svg:circle")
           .attr("r", 4,5)
           .attr("class", function(d) { return d._children ? "children" : ""; })
@@ -164,6 +178,8 @@ module.exports = View.extend({
           d.x0 = d.x;
           d.y0 = d.y;
         });
+
+        this.showSelectedNode();
       }
     },
     //open / close a branch of the tree
@@ -189,7 +205,7 @@ module.exports = View.extend({
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      if(this.collection.activeConceptId == d.uri) {
+      if(this.collection.getActiveConcept().id == d.uri) {
         this.collection.toggleConcept(true);
       }
       d3.event.stopPropagation();

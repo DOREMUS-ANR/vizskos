@@ -11,7 +11,7 @@ module.exports = View.extend({
     },
 
     //
-    resize: function resizeNav() {
+    setSize: function setSizeNav() {
       this.initSize();
  
       this.svg
@@ -22,22 +22,37 @@ module.exports = View.extend({
         .attr("width", this.width)
         .attr("height", this.height);
 
-      this.render();
     },
 
     // The NavView listens for changes to its model, re-rendering.
     afterInit: function afterInitNav(){
+      this.preRender();
+      
+      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
+      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
 
       $(window).on("resize", this.resize.bind(this));
-      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
-      this.listenTo(this.collection, 'navChanged', this.preRender);
+      
 
     },
-    
+    dataChanged: function dataChanged() {
+      this.root = this.collection.conceptTree;
+      if(this.root){
+        source.x0 = this.height / 2;
+        source.y0 = 0;
+        this.preRender();
+        
+      }
+    },
+    resize: function resizeNav() {
+      
+      this.setSize();
+      this.render(this.root);
+    },
     // Re-renders the titles of the todo item.
     preRender: function preRenderNav() {
-  
-      if(this.collection.loaded){
+      console.log("isloaded", this.collection.loaded);
+      //if(this.collection.loaded){
 
         this.initSize();
        
@@ -55,19 +70,18 @@ module.exports = View.extend({
           .append("svg:g")
             .attr("class", "main " + this.collection.activeThesaurus);  
 
-        this.root = this.collection.conceptTree;
-        this.root.x0 = this.height / 2;
-        this.root.y0 = 0;
-        this.render(this.root);
+        this.setSize();
+     
+        if(this.root) this.render(this.root);
 
-        this.resize();
-        this.showSelectedNode();
-      }
+       
+      //}
  
     },
     //render the nav
     render : function renderNav(source) {
-
+      if(source !== undefined){
+      
       //if(this.collection.loaded){
       // Compute the new tree layout.
       var nodes = this.tree.nodes(this.root).reverse(),
@@ -154,7 +168,10 @@ module.exports = View.extend({
         d.x0 = d.x;
         d.y0 = d.y;
       });
-      //}
+
+       this.showSelectedNode();
+
+      }
     },
     //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d, i) {
@@ -179,7 +196,7 @@ module.exports = View.extend({
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      if(this.collection.activeConceptId == d.uri) {
+      if(this.collection.getActiveConcept().id == d.uri) {
         this.collection.toggleConcept(true);
       }
       d3.event.stopPropagation();

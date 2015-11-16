@@ -31,11 +31,11 @@ module.exports = View.extend({
      		this.homeView = new HomeView({collection : this.collection, el: this.$('article')}).render();
      		this.footerView = new FooterView({collection : this.collection, el: this.$('footer')}).render();
      	}else if(this.page === 'thesaurus'){
-      		this.headerView = new HeaderView({collection : this.collection, el: this.$('header .logo')}).render();
-      		this.conceptView = new ConceptView({collection : this.collection, el: this.$('article')}).render();
-      		this.navView = new NavView({collection : this.collection, el: this.$('nav.nav')}).render();
-      		this.selectNavView = new SelectNavView({collection : this.collection, el: this.$('header .tools') }).render();
+      	this.headerView = new HeaderView({collection : this.collection, el: this.$('header .logo')}).render();
+      	this.conceptView = new ConceptView({collection : this.collection, el: this.$('article')});
+      	this.navView = new NavView({collection : this.collection, el: this.$('nav.nav')}).render();
+      	this.selectNavView = new SelectNavView({collection : this.collection, el: this.$('header .tools') }).render();
 
-      	}
+      }
     }
 });

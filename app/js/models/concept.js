@@ -22,7 +22,7 @@ module.exports = Backbone.Model.extend({
     }else if(this.attributes["skos:topConceptOf"]){
       this.set('conceptScheme', this.attributes["skos:topConceptOf"]);
     }
-    var scheme = this.collection.activeThesaurus.name;
+    var scheme = this.collection.getActiveThesaurus().name;
     this.set('conceptSchemeName', scheme.name);
     this.set('conceptSchemeClass', scheme.class);
     

@@ -1,7 +1,7 @@
 <form>
 	<select id="selectThesaurus" name="selectThesaurus">
 	{{#each thesauri}}
-  		<option value="{{id}}" {{#if selected}} selected="selected" {{/if}} >{{name}}</option>
+  		<option value="{{named_id}}" {{#if selected}} selected="selected" {{/if}} >{{name}}</option>
 	{{/each}}
 	</select><br />
 	<select id="selectNav" name="selectNav">

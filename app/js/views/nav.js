@@ -7,7 +7,7 @@ module.exports = View.extend({
     afterInit: function afterInitNav(){
      
       this.listenTo(this.collection, 'viewTypeChanged', this.render);
-      this.listenTo(this.collection, 'dataChanged', this.render);
+      
 
     },
     
@@ -16,9 +16,9 @@ module.exports = View.extend({
     render: function renderNav() {
       this.$el.empty();
       if(this.collection.getViewType() === 1){
-        this.navView = new NavCircle({collection : this.collection}).preRender();
+        this.navView = new NavCircle({collection : this.collection}).render();
       }else if(this.collection.getViewType() === 2){
-        this.navView = new NavTree({collection : this.collection}).preRender();
+        this.navView = new NavTree({collection : this.collection}).render();
       }
 
     }
