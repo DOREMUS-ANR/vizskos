@@ -240,7 +240,6 @@ module.exports = Backbone.Collection.extend({
       }
     }
   },
-
   //loads thesaurus
   loadThesaurus : function loadThesaurus(named_id){
     //callback once loaded

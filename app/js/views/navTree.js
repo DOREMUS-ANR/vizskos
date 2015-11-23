@@ -181,14 +181,47 @@ module.exports = View.extend({
     },
     //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d, i) {
-      if (d.children) {
-        d._children = d.children;
-        d.children = null;              
-      } else {
-        d.children = d._children;
-        d._children = null;
+
+
+      //open all nodes
+      function toggleChildren (node, open){
+        console.log(node,open)
+        if(!open && node.children){
+          node._children = node.children;
+          node.children = null;
+        }else if(open && node._children){
+          node.children = node._children;
+          node._children = null;
+        }
       }
-      this.render(d);
+      //open all children
+      function openAllChildren (node){
+        var children = node.children || node._children;
+        if(children){
+          for (var i = 0; i < children.length; i++){
+            //console.log("element",node.children[i]);
+            toggleChildren(children[i], true);
+            openAllChildren(children[i]);
+          }
+        }
+      }
+      openAllChildren(this.root);
+      //
+      function closeSiblings(node){
+        if (!node.parent) return;
+         var siblings = node.parent.children;
+         for (var i = 0; i < siblings.length; i++){
+          if(siblings[i].uri !== node.uri){
+            toggleChildren(siblings[i], false);
+            closeSiblings(siblings[i].parent);
+          }
+          //console.log(d);
+        }
+      }
+
+     closeSiblings(d);
+      this.render(this.root)
+      
     },
     showSelectedNode: function showSelectedNodeNav() {
       //if(this.collection.loaded){
