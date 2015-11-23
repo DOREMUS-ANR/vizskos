@@ -26,23 +26,28 @@ module.exports = View.extend({
 
     // The NavView listens for changes to its model, re-rendering.
     afterInit: function afterInitNav(){
-      this.preRender();
+
       
       this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
       this.listenTo(this.collection, 'dataChanged', this.dataChanged);
+      this.listenTo(this.collection, 'filterChanged', this.filterChanged);
 
       $(window).on("resize", this.resize.bind(this));
-      
+      this.root = this.collection.conceptTree;
 
     },
     dataChanged: function dataChanged() {
       this.root = this.collection.conceptTree;
       if(this.root){
-        source.x0 = this.height / 2;
-        source.y0 = 0;
+        this.root.x0 = this.height / 2;
+        this.root.y0 = 0;
         this.preRender();
         
       }
+    },
+    filterChanged: function filterChanged() {
+      console.log("filterChanged");
+      this.showFilteredNodes();
     },
     resize: function resizeNav() {
       
@@ -51,11 +56,11 @@ module.exports = View.extend({
     },
     // Re-renders the titles of the todo item.
     preRender: function preRenderNav() {
-      console.log("isloaded", this.collection.loaded);
+      //console.log("isloaded", this.collection.loaded);
       //if(this.collection.loaded){
 
         this.initSize();
-       
+        $("nav.nav").empty();
         this.tree = d3.layout.tree()
           .size([this.height, this.width]);
         //
@@ -68,18 +73,18 @@ module.exports = View.extend({
         //
         this.main = this.vis
           .append("svg:g")
-            .attr("class", "main " + this.collection.activeThesaurus);  
+            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);  
 
         this.setSize();
      
         if(this.root) this.render(this.root);
 
-       
       //}
  
     },
     //render the nav
     render : function renderNav(source) {
+
       if(source !== undefined){
       
       //if(this.collection.loaded){
@@ -96,7 +101,7 @@ module.exports = View.extend({
 
       // Enter any new nodes at the parent's previous position.
       var nodeEnter = node.enter().append("g")
-          .attr("class", function(d){ return "node node_"+d.id; })
+          .attr("class", function(d){ return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id; })
           .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; });
 
       nodeEnter.append("circle")
@@ -115,6 +120,7 @@ module.exports = View.extend({
       // Transition nodes to their new position.
       var nodeUpdate = node.transition()
           .duration(this.duration)
+          .attr("class", function(d){ return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id; })
           .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
       nodeUpdate.select("circle")
@@ -184,21 +190,30 @@ module.exports = View.extend({
       }
       this.render(d);
     },
-    showSelectedNode: function showSelectedNodeNav(uri) {
+    showSelectedNode: function showSelectedNodeNav() {
       //if(this.collection.loaded){
         d3.select(".node.selected").classed("selected", false);
         var themodel = this.collection.getActiveConcept();
         if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
       //}
     },
+    showFilteredNodes: function showFilteredNodesNav() {
+      d3.select(".node.filtered").classed("filtered", false);
+     
+      var thelist = this.collection.getFilteredNodes();
+      for(var i=0; i< thelist.length; i++){
+        console.log(thelist[i], thelist[i].attributes.id);
+        d3.select(".node_"+ thelist[i].attributes.id).classed("filtered", true);
+      }
+    },
     selectNode: function selectNodeNav(d, i) {
       //send request to the router
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      if(this.collection.getActiveConcept().id == d.uri) {
+      //if(this.collection.getActiveConcept().id == d.uri) {
         this.collection.toggleConcept(true);
-      }
+      //}
       d3.event.stopPropagation();
     }
 

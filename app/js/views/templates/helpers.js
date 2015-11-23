@@ -47,6 +47,11 @@ Handlebars.registerHelper('process_uri', function(uri) {
 	return application.processUri(uri);
 });
 
+Handlebars.registerHelper('name_with_uri', function(uri) {
+	if (!uri) return;
+	return application.collection.getNameWithUri(uri);
+});
+
 Handlebars.registerHelper('is_internal_link', function(uri) {
 	if(!uri) return;
   	if(application.collection.matchAnyThesaurus(uri)){

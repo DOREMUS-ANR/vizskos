@@ -16,9 +16,9 @@ module.exports = View.extend({
     render: function renderNav() {
       this.$el.empty();
       if(this.collection.getViewType() === 1){
-        this.navView = new NavCircle({collection : this.collection}).render();
+        this.navView = new NavCircle({collection : this.collection}).preRender();
       }else if(this.collection.getViewType() === 2){
-        this.navView = new NavTree({collection : this.collection}).render();
+        this.navView = new NavTree({collection : this.collection}).preRender();
       }
 
     }

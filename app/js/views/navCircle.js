@@ -2,10 +2,10 @@ var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
     events: {
-      'scroll': 'zoom',
+      'scroll': 'changeScale',
     },
     changeScale: function zoomNav() {
-      //this.main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
+      this.main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
     },
     initSize: function initSizeNav() {
       this.height = $(window).height() ;
@@ -40,12 +40,12 @@ module.exports = View.extend({
 
     // The NavView listens for changes to its model, re-rendering.
     afterInit: function afterInitNav(){
-      this.preRender();
+  
       this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
       this.listenTo(this.collection, 'dataChanged', this.dataChanged);
 
       $(window).on("resize", this.resize.bind(this));
-      
+      this.root = this.collection.conceptTree;
     },
     dataChanged: function dataChanged() {
       this.root = this.collection.conceptTree;
@@ -60,7 +60,7 @@ module.exports = View.extend({
     preRender: function preRenderNav() {
       
       //if(this.collection.loaded){
-     
+        $("nav.nav").empty();
         this.cluster = d3.layout.tree()
           .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
    
@@ -92,7 +92,6 @@ module.exports = View.extend({
 
         this.setSize();
         
-
         if(this.root) this.render(this.root);
         
         
@@ -100,12 +99,9 @@ module.exports = View.extend({
      
     },
     render : function renderNav(source) {
-      
+      //console.log("la source", source.x, source.x0, this.xRadius, this.yRadius);
       if(source !== undefined){
       
-      //console.log("la source", source, source.x, Number.isNaN(source.x));
-     
-
         var nodes = this.cluster.nodes(this.collection.conceptTree);
         var links = this.cluster.links(nodes);
         var whiteRadius = this.whiteRadius;
@@ -113,21 +109,22 @@ module.exports = View.extend({
         this.main
             .attr("transform", "translate(" + (100 + this.xRadius ) + "," + (25 + this.yRadius) + ")");
 
-        //this.main.call(this.zoom);
+        this.main.call(this.zoom);
 
         var node = this.main.selectAll("g.node").data(nodes);
         var link = this.main.selectAll("path.link").data(links);
         
         this.arc.attr("d", d3.svg.arc().innerRadius(this.yRadius - this.whiteRadius).outerRadius(this.yRadius).startAngle(0).endAngle(2 * Math.PI));
 
-         var linkUpdate = link.transition()
-          .duration(this.duration)
-          .attr("d", this.diagonal);
-
         var linkEnter = link.enter()
           .append("svg:path")
             .attr("class", "link")
             .attr("d", this.diagonal);
+
+        var linkUpdate = link.transition()
+          .duration(this.duration)
+          .attr("d", this.diagonal);
+         
 
         var linkExit = link.exit().transition()
           .duration(this.duration)
@@ -205,9 +202,9 @@ module.exports = View.extend({
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      if(this.collection.getActiveConcept().id == d.uri) {
+      //if(this.collection.getActiveConcept() && this.collection.getActiveConcept().id == d.uri) {
         this.collection.toggleConcept(true);
-      }
+      //}
       d3.event.stopPropagation();
     }
 

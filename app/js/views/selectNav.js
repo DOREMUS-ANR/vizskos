@@ -7,12 +7,12 @@ module.exports = View.extend({
     events: {
       'change #selectNav': 'selectNav',
       'change #selectThesaurus': 'selectThesaurus',
+      'change #search': 'search',
     },
     //
     afterInit: function afterInitSelectNav(){
       this.listenTo(this.collection, 'dataChanged', this.render);
       this.listenTo(this.collection, 'viewTypeChanged', this.render);
-      this.listenTo(this.collection, 'thesaurusChanged', this.render);
     },
     //
     getRenderData: function getRenderDataSelectNav(){
@@ -24,6 +24,9 @@ module.exports = View.extend({
     //  
     selectNav: function selectNav(event) {      
       this.collection.setViewType(Number($(event.target).val()));
+    },
+    search: function selectNav(event) {
+      this.collection.filter($(event.target).val());
     },
     //  
     selectThesaurus: function selectThesaurus(event) {      

@@ -17,10 +17,11 @@ module.exports = View.extend({
     //if page has changed, render again
     setPage: function setPageApp(newPage) {
     
-      	if(newPage !== this.page){
-      		this.page = newPage;
-      		(this.$('article').length > 0) ? this.afterRender() : this.render();
-      	}
+      if(newPage !== this.page){
+      	this.page = newPage;
+      	(this.$('article').length > 0) ? this.afterRender() : this.render();
+      }
+      
     },
 
     //after rendering

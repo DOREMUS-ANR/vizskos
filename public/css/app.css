@@ -29,7 +29,7 @@ header form select{
 
 footer{
 	background: #fff;
-	position: absolute;
+	position: fixed;
 	bottom: 0;
 	width: 100%;
 }
@@ -220,7 +220,7 @@ article .concept a:focus{
 /* CSS Document */
 
 .home {
-  padding: 300px 0 280px 10px;
+  padding: 250px 0 280px 10px;
   display: flex;
   width: 1390px;
   justify-content:flex-end;
@@ -286,6 +286,13 @@ article .concept a:focus{
 }
 .hs .node circle:hover {
   fill: #98a183 !important;
+}
+
+.node text{
+  
+}
+.node.filtered text{
+  stroke:#0F0;
 }
 
 .node {

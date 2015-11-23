@@ -31,6 +31,13 @@
   fill: #98a183 !important;
 }
 
+.node text{
+  
+}
+.node.filtered text{
+  stroke:#0F0;
+}
+
 .node {
   cursor: pointer;
 }

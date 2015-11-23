@@ -26,6 +26,8 @@ module.exports = Backbone.Model.extend({
     this.set('conceptSchemeName', scheme.name);
     this.set('conceptSchemeClass', scheme.class);
     
+    this.set('conceptDefinition', this.attributes["skos:definition"]);
+    
     //prefered labels
     if(this.attributes["skos:prefLabel"]){
       this.set('prefLabel', Array.isArray(this.attributes["skos:prefLabel"])? _.sortBy(this.attributes["skos:prefLabel"], this.sortByLanguage) : [this.attributes["skos:prefLabel"]] );
@@ -44,7 +46,7 @@ module.exports = Backbone.Model.extend({
         this.set('hasTopConcept', this.attributes["skos:hasTopConcept"]["@id"]);
       }
     }
-    
+    //console.log("attributes",this.attributes);
     //children
     if(this.attributes["skos:narrower"]){
       this.set('narrower', Array.isArray(this.attributes["skos:narrower"])? this.attributes["skos:narrower"] : [this.attributes["skos:narrower"]]);
@@ -57,6 +59,8 @@ module.exports = Backbone.Model.extend({
     if(this.attributes["skos:closeMatch"] ){
       this.set('closeMatch', Array.isArray(this.attributes["skos:closeMatch"]) ? this.attributes["skos:closeMatch"] : [this.attributes["skos:closeMatch"]]);
     }
+
+   
     
   },
   //returns previous or next concept in the collection

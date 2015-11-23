@@ -44,7 +44,6 @@ module.exports = Backbone.Collection.extend({
   //return the active thesaurus
   getActiveThesaurus : function getActiveThesaurus(){
     var thesaurus = this.activeThesaurus || this.thesaurusLoading;
-    //console.log(thesaurus, this.activeThesaurus, this.thesaurusLoading);
     thesaurus.prefLabel = [thesaurus.name];
     thesaurus.type =  "skos:ConceptScheme";
     thesaurus.uri = thesaurus.id;
@@ -74,6 +73,15 @@ module.exports = Backbone.Collection.extend({
     return _.findWhere(this.thesauri, {'named_id' : named_id});
   },
 
+  //set filter
+  setFilter : function setFilterThesaurus(keyword){
+    sessionStorage.setItem("filter", keyword);
+  },
+  //get filter
+  getFilter : function getFilterThesaurus(){
+    return sessionStorage.getItem("filter") || "";
+  },
+
   //get available kinds of nav (and which one is selected)
   getViewTypes : function getViewTypesThesaurus(){
     var viewType = this.getViewType();
@@ -89,11 +97,10 @@ module.exports = Backbone.Collection.extend({
 
   //set the kind of nav selected
   setViewType : function setViewTypeThesaurus(type){
-    console.log("viewType", this.getViewType(), Number(sessionStorage.getItem("viewType")), type, Number(sessionStorage.getItem("viewType"))=== type );
+    //console.log("viewType", this.getViewType(), Number(sessionStorage.getItem("viewType")), type, Number(sessionStorage.getItem("viewType"))=== type );
     var oldtype = this.getViewType();
     sessionStorage.setItem("viewType", type);
     if( oldtype !== type){
-      
       this.trigger("viewTypeChanged", this);
     }
     
@@ -113,6 +120,44 @@ module.exports = Backbone.Collection.extend({
     }
     return false;
   },
+
+  findKeywordInElement : function findKeywordInElementThesaurus(keyword, elt){
+    if( typeof elt === "string" ){
+      keyword = new RegExp(keyword, 'i');
+      if(elt.search(keyword) !== -1) return true;
+    }else if (Array.isArray(elt)){
+      for(str in elt){
+        if(this.findKeywordInElement(keyword, str)) return true;
+      }
+    } else if(typeof elt === "object" ){
+      for(str in elt){
+        if(this.findKeywordInElement(keyword, str)) return true;
+      }
+    }
+    return false;
+  },
+
+  filter : function filterThesaurus(keyword){
+
+    this.models.map(function(element){
+      if(this.findKeywordInElement(keyword, element.attributes.prefLabel)
+        || this.findKeywordInElement(keyword, element.attributes.altLabel)
+        || this.findKeywordInElement(keyword, element.attributes["skos:definition"])){
+        element.attributes.filtered = true;
+      }else{
+        element.attributes.filtered = false;
+      }
+      return element;
+    }.bind(this));
+    this.trigger("filterChanged", this);
+  },
+
+  getFilteredNodes : function getFilteredNodes(){
+    return this.models.filter(function(element){
+      if(element.attributes.filtered) return true;
+    });
+  },
+
 
   //checks if a URI matches a pattern
   matchPattern : function matchPatternThesaurus(pattern, uri){
@@ -245,7 +290,7 @@ module.exports = Backbone.Collection.extend({
   
   //get name of a concept
   getName : function getName (prefLabels){
-    
+  
     if(!prefLabels) return "";
     if(Array.isArray(prefLabels)){
       var name = prefLabels.filter(function(prefLabel){
@@ -265,6 +310,14 @@ module.exports = Backbone.Collection.extend({
 
   },
 
+  getNameWithUri : function getNameWithUriThesaurus(uri){
+    var themodel = this.models.filter(function (element){
+      return element.attributes["@id"] === uri;
+    });
+    if(themodel[0]) return this.getName(themodel[0].attributes["skos:prefLabel"]);
+    return uri;
+  },
+
   //get children concepts of a concept
   getChildren : function getChildren(node){
     
@@ -275,7 +328,10 @@ module.exports = Backbone.Collection.extend({
     }).map(function (childElement){
       var name = that.getName(childElement.attributes["skos:prefLabel"]);
       var children = that.getChildren(childElement.attributes);
-      var result = {"name" : name, uri : childElement.attributes["@id"], id : childElement.attributes["id"]};
+      var result = { name : name, 
+        uri : childElement.attributes["@id"], 
+        id : childElement.attributes["id"],
+        filtered: childElement.attributes.filtered};
       if(children.length > 0) {
         result.children = children;
         result.size = children.length;
@@ -287,30 +343,7 @@ module.exports = Backbone.Collection.extend({
 
   },
 
-  //get parent concepts of a concept
-  getParent : function getParentThesaurus(nodeId, data){
-    
-    var that = this;
-
-    var element = data.filter(function (element){
-      return element["@id"] === nodeId;
-    });
-    var parent = new Array();
-
-    if(element.parents){
-      return element.parents;
-    }else if(element["skos:broader"]) {
-      var grandParent =  that.getParent(element["skos:broader"], data);
-
-      if(grandParent.length>0){
-        parent = grandParent;
-      }
-      
-      parent = parent.concat([element["skos:broader"]]);
-    }
-    return parent;      
-    
-  },
+  
   toggleConcept : function toggleConceptThesaurus(visible){
     if(visible){
       if(visible === true){
@@ -340,32 +373,65 @@ module.exports = Backbone.Collection.extend({
 
   },
 
+  //get parent concepts of a concept
+  getParent : function getParentThesaurus(node, data){
+    
+    if(data.length === 1) return [];
+
+    var parent = [];
+
+    if(node && node["skos:broader"] ){
+      var grandParent;
+      var elementParent = data.filter(function (elt){
+        return elt["@id"] === node["skos:broader"];
+      });
+      if(elementParent[0] && elementParent[0].parents){
+        grandParent = elementParent[0].parents;
+      }else {
+        grandParent =  this.getParent(elementParent, data);
+      }
+      if(grandParent.length>0){
+        parent = grandParent;
+      }  
+      parent = parent.concat([node["skos:broader"]]);
+    }
+    return parent;
+
+  },
   //once the data is loaded, prepares a tree for nav rendering
   prepareData: function prepareDataThesaurus(data){
     var that = this;
 
+    this.provData = data;
     //add parent hierarchy
     var data = data.map(function(element){
-      var parent = that.getParent(element["@id"], data);
-      if(parent.length>0){
+      var parent = this.getParent(element, data);
+
+      if(parent && parent.length>0){
         element.parents = parent;
       }
       return element;
-    });
+    }.bind(this));
 
     if(this.models.length === 1){
       this.add(data);
     }else{
-      this.reset(data); 
+      this.reset(data);
     }
 
     if(this.models.length>1){
-      //creates hierarchical tree for nav
+   
+
+
+    //creates hierarchical tree for nav
       var filteredTree = this.models.filter(function(element){
         return element.attributes["skos:topConceptOf"] !== undefined;
       }).map(function (element){
         var children = that.getChildren(element.attributes);
-        var result = { "name" : that.getName(element.attributes["skos:prefLabel"]), uri : element.attributes["@id"], id : element.attributes["id"]};
+        var result = { name : that.getName(element.attributes["skos:prefLabel"]), 
+          uri : element.attributes["@id"], 
+          id : element.attributes["id"], 
+          filtered : element.attributes.filtered};
         if(children.length > 0) {
           result.children = children;
           result.size = children.length;
@@ -375,18 +441,22 @@ module.exports = Backbone.Collection.extend({
         return result;
       });
 
-      var dataTree = {"name" : this.getActiveThesaurus().name };
+      var dataTree = this.getActiveThesaurus();
       dataTree.children = filteredTree;
       
-      this.counter = 1;
+      
+    this.counter = 1;
       
       //orders the collection according to the tree
-      this.findRank(dataTree);
+      this.findRank(this.conceptTree);
       this.sort();
-      //console.log(dataTree);
+
+            //console.log(dataTree);
       this.conceptTree = dataTree;
       this.trigger("dataChanged");
     }
+
+
   }
 
 });

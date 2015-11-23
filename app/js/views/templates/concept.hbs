@@ -20,9 +20,9 @@
     </hgroup>
     <detail>
 
-      {{#if skos:definition}}
+      {{#if conceptDefinition}}
         <h2><code>skos:definition</code></h2>
-        <p class="definition">{{{translation_label skos:definition}}}</p>
+        <p class="definition">{{{translation_label conceptDefinition}}}</p>
       {{/if}}
       {{#if concept}}
       {{#if "prefLabel && concept"}}
@@ -54,7 +54,7 @@
         <h2><code>skos:broader</code></h2>
         <ul>
           {{#each parents}}
-            <li class="parent_{{@index}}"><a href="{{{this}}}" class="link">{{{this}}}</a></li>
+            <li class="parent_{{@index}}"><a href="{{{this}}}" class="link">{{{name_with_uri this}}}</a></li>
           {{/each}}
         </ul>
       {{/if}}
@@ -62,7 +62,7 @@
         <h2>Children <code>skos:narrower</code></h2>
         <ul>
         {{#each narrower}}
-          <li><a href="{{{this}}}" class="link">{{{this}}}</a></li>
+          <li><a href="{{{this}}}" class="link">{{{name_with_uri this}}}</a></li>
         {{/each}}
         </ul>
       {{/if}}
@@ -70,7 +70,7 @@
         <h2><code>skos:exactMatch</code></h2>
         <ul>
       	{{#each exactMatch}}
-        	<li><a href="{{{this}}}" {{{is_internal_link this}}}>{{{this}}}</a></li>
+        	<li><a href="{{{this}}}" {{{is_internal_link this}}}>{{{name_with_uri this}}}</a></li>
      	 	{{/each}}
         </ul>
       {{/if}}
