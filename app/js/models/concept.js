@@ -22,7 +22,7 @@ module.exports = Backbone.Model.extend({
     }else if(this.attributes["skos:topConceptOf"]){
       this.set('conceptScheme', this.attributes["skos:topConceptOf"]);
     }
-    var scheme = this.collection.getActiveThesaurus().name;
+    var scheme = this.collection.getActiveThesaurus();
     this.set('conceptSchemeName', scheme.name);
     this.set('conceptSchemeClass', scheme.class);
     
@@ -59,8 +59,6 @@ module.exports = Backbone.Model.extend({
     if(this.attributes["skos:closeMatch"] ){
       this.set('closeMatch', Array.isArray(this.attributes["skos:closeMatch"]) ? this.attributes["skos:closeMatch"] : [this.attributes["skos:closeMatch"]]);
     }
-
-   
     
   },
   //returns previous or next concept in the collection

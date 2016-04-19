@@ -2,10 +2,10 @@ var jsonld = require('jsonld');
 var concept = require('./concept');
 var application = require('../application');
 module.exports = Backbone.Collection.extend({
-  
+
   //default properties
-  //Warning : they are reset when all concepts in the collection are reset, 
-  //not when some are added or removed 
+  //Warning : they are reset when all concepts in the collection are reset,
+  //not when some are added or removed
 
   model: concept,
   loaded: false,
@@ -13,11 +13,45 @@ module.exports = Backbone.Collection.extend({
   activeThesaurus : null,
   thesaurusLoading : null,
   comparator: 'rank',
-  thesauri : [
-    {'id' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'named_id': 'InstrumentsKeywords', 'pattern' : 'http://www.mimo-db.eu/InstrumentsKeywords', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/InstrumentsKeywords.json', 'base': 'http://www.mimo-db.eu/', 'name' : 'MIMO Thesaurus'},
-    {'id' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'named_id': 'HornbostelAndSachs', 'pattern' : 'http://www.mimo-db.eu/HornbostelAndSachs', 'endpoint' : 'http://data.mimo-db.eu:9091/sparql/describe?uri=', 'data': 'http://www.mimo-db.eu/data/HornbostelAndSachs.json', 'base': 'http://www.mimo-db.eu/', 'name': 'Sachs & Hornbostel classification'}
-  ],
-  viewTypes : [{ 'id' : 1, 'name' : 'circular tree'},{ 'id' : 2, 'name' : 'tree'}],
+ thesauri : [{id : 'http://www.mimo-db.eu/InstrumentsKeywords',
+    named_id: 'InstrumentsKeywords',
+    pattern : 'http://www.mimo-db.eu/InstrumentsKeywords',
+    endpoint : 'http://data.mimo-db.eu/sparql/describe?uri=',
+    data: 'http://www.mimo-db.eu/data/InstrumentsKeywords.json',
+    base: 'http://www.mimo-db.eu/',
+    name : 'MIMO Thesaurus'},
+    {id : 'http://www.mimo-db.eu/HornbostelAndSachs',
+    named_id: 'HornbostelAndSachs',
+    pattern : 'http://www.mimo-db.eu/HornbostelAndSachs',
+    endpoint : 'http://data.mimo-db.eu/sparql/describe?uri=',
+    data: 'http://www.mimo-db.eu/data/HornbostelAndSachs.json',
+    base: 'http://www.mimo-db.eu/',
+    name: 'Sachs & Hornbostel classification'}
+  ],/*
+  thesauri : [{id : 'http://pas-sages.org/doremus/peuples/',
+    named_id: 'Peuples',
+    pattern : '',
+    endpoint : '',
+    data: 'http://pas-sages.org/doremus/peuples/data/peuples.json',
+    base: 'http://pas-sages.org/doremus/peuples/',
+    name : 'Peuples preview extraction'}
+  ],/*
+  thesauri : [{id : 'http://pas-sages.org/doremus/iaml/',
+    named_id: 'iaml',
+    pattern : 'http://data.doremus.org/vocabulary/iaml/',
+    endpoint : '',
+    data: 'http://pas-sages.org/doremus/data/iaml.json',
+    base: 'http://data.doremus.org/vocabulary/',
+    name : 'Medium of Performance IAML'},
+    {id : 'http://pas-sages.org/doremus/derivation/',
+    named_id: 'derivation',
+    pattern : 'http://data.doremus.org/vocabulary/derivation/',
+    endpoint : '',
+    data: 'http://pas-sages.org/doremus/data/derivation.json',
+    base: 'http://data.doremus.org/vocabulary/',
+    name : 'Types de dérivation entre oeuvres'}
+  ],*/
+  viewTypes : [{id : 2, name : 'tree'},{ id : 1, name : 'circular tree'}],
   conceptClosed : false,
   context : {
     "skos": "http://www.w3.org/2004/02/skos/core#",
@@ -103,12 +137,12 @@ module.exports = Backbone.Collection.extend({
     if( oldtype !== type){
       this.trigger("viewTypeChanged", this);
     }
-    
+
   },
 
   //get the kind of nav selected
   getViewType : function getViewTypeThesaurus(){
-    var viewType = Number(sessionStorage.getItem("viewType")) || 1;
+    var viewType = Number(sessionStorage.getItem("viewType")) || 2;
     return viewType;
   },
 
@@ -170,7 +204,7 @@ module.exports = Backbone.Collection.extend({
 
     //if the URI is not complete (cf application.js, ex 3), adds domain
     if(uri.search("http") === -1) uri = location.origin + "/" + uri;
-    
+
     //the URI is a thesaurus (true) or a concept (false)
     var isFullThesaurus;
     //in both cases finds which thesaurus
@@ -189,21 +223,21 @@ module.exports = Backbone.Collection.extend({
         //is uri one of the thesauri ? load it !
         this.activeURI = uri;
         if(this.activeThesaurus === null || this.activeThesaurus.id !== whichThesaurus[0].id){
-          
+
 
           this.loadThesaurus(whichThesaurus[0].named_id);
         }else{
           this.trigger("conceptChanged", this);
         }
       }else{
-        //else if URI is a concept, load it first (before loading full nav)  
+        //else if URI is a concept, load it first (before loading full nav)
         this.loadURI(uri, whichThesaurus[0]);
       }
     }else{
 
       //if URI matches nothing, then load first thesaurus in the settings
       this.loadThesaurus(this.thesauri[0].named_id);
-    }    
+    }
   },
 
   //load a single URI
@@ -214,7 +248,7 @@ module.exports = Backbone.Collection.extend({
       this.trigger("conceptChanged", this);
 
       if(this.activeThesaurus === null || this.activeThesaurus.id !== thesaurus.id){
-  
+
         this.thesaurusLoading = thesaurus;
         this.trigger("conceptChanged", this);
         $.ajax({
@@ -247,8 +281,9 @@ module.exports = Backbone.Collection.extend({
     this.thesaurusLoading = thesaurus;
 
     var loadingCompleted  = function (collection){
+
       //compacts json-ld (to avoid deep objects that are complicated to handle and sort)
-      jsonld.compact(collection, this.context, function(err, compacted) { 
+      jsonld.compact(collection, this.context, function(err, compacted) {
         this.setActiveThesaurus(thesaurus);
         //inform listeners
         this.trigger("navChanged", this);
@@ -264,7 +299,7 @@ module.exports = Backbone.Collection.extend({
     }
     this.loaded = false;
 
-    $.ajax({  
+    $.ajax({
       'url': thesaurus.endpoint + thesaurus.id ,
       'headers': {'Accept' : 'application/ld+json'},
       'context': this,
@@ -273,7 +308,7 @@ module.exports = Backbone.Collection.extend({
     })
     .done(loadingCompleted)
     .fail(function(error){
-      console.log("essai n°3", thesaurus.data)
+      //console.log("essai n°3", thesaurus.data)
       $.ajax({
         'url': thesaurus.data ,
         'context': this,
@@ -284,12 +319,12 @@ module.exports = Backbone.Collection.extend({
         //console.log(error);
       })
     });
-    
+
   },
-  
+
   //get name of a concept
   getName : function getName (prefLabels){
-  
+
     if(!prefLabels) return "";
     if(Array.isArray(prefLabels)){
       var name = prefLabels.filter(function(prefLabel){
@@ -319,7 +354,7 @@ module.exports = Backbone.Collection.extend({
 
   //get children concepts of a concept
   getChildren : function getChildren(node){
-    
+
     var that = this;
     return this.models.filter(function (element){
       return element.attributes["skos:broader"] === node["@id"];
@@ -327,14 +362,14 @@ module.exports = Backbone.Collection.extend({
     }).map(function (childElement){
       var name = that.getName(childElement.attributes["skos:prefLabel"]);
       var children = that.getChildren(childElement.attributes);
-      var result = { name : name, 
-        uri : childElement.attributes["@id"], 
+      var result = { name : name,
+        uri : childElement.attributes["@id"],
         id : childElement.attributes["id"],
         filtered: childElement.attributes.filtered};
       if(children.length > 0) {
         result.children = children;
         result.size = children.length;
-      }else{ 
+      }else{
         result.size = 1;
       }
       return result;
@@ -342,7 +377,7 @@ module.exports = Backbone.Collection.extend({
 
   },
 
-  
+
   toggleConcept : function toggleConceptThesaurus(visible){
     if(visible){
       if(visible === true){
@@ -358,7 +393,7 @@ module.exports = Backbone.Collection.extend({
   },
 
   findRank : function findRankThesaurus (dataObj){
-    //gives a rank property to each concept according to its place in the tree 
+    //gives a rank property to each concept according to its place in the tree
     //to enable prev/next navigation
     if(!dataObj) return false;
     for(var element in dataObj) {
@@ -372,9 +407,24 @@ module.exports = Backbone.Collection.extend({
 
   },
 
+  sortThesaurus : function sortThesaurus (dataObj){
+    //if(!dataObj) return false;
+    if(Array.isArray(dataObj)){
+      dataObj.sort(function(a, b){
+        //console.log(a, b);
+        var nameA=a.name.toLowerCase(), nameB=b.name.toLowerCase();
+        //console.log(nameA, nameB);
+        return nameA.localeCompare(nameB);
+      })
+    }
+    //console.log(dataObj);
+    if (dataObj.children) this.sortThesaurus(dataObj.children);
+
+  },
+
   //get parent concepts of a concept
   getParent : function getParentThesaurus(node, data){
-    
+
     if(data.length === 1) return [];
 
     var parent = [];
@@ -391,7 +441,7 @@ module.exports = Backbone.Collection.extend({
       }
       if(grandParent.length>0){
         parent = grandParent;
-      }  
+      }
       parent = parent.concat([node["skos:broader"]]);
     }
     return parent;
@@ -419,18 +469,18 @@ module.exports = Backbone.Collection.extend({
     }
 
     if(this.models.length>1){
-   
+
 
 
     //creates hierarchical tree for nav
       var filteredTree = this.models.filter(function(element){
-        return element.attributes["skos:topConceptOf"] !== undefined;
-      }).map(function (element){
+        return element.attributes["skos:topConceptOf"] !== undefined || that.getName(element.attributes["skos:prefLabel"]).match(/^Ethnologie --/);
+      })
+      .map(function (element){
         var children = that.getChildren(element.attributes);
-        var result = { name : that.getName(element.attributes["skos:prefLabel"]), 
-          uri : element.attributes["@id"], 
-          id : element.attributes["id"], 
-          filtered : element.attributes.filtered};
+        var result = { name : that.getName(element.attributes["skos:prefLabel"]),
+          uri : element.attributes["@id"],
+          id : element.attributes["id"]};
         if(children.length > 0) {
           result.children = children;
           result.size = children.length;
@@ -442,15 +492,15 @@ module.exports = Backbone.Collection.extend({
 
       var dataTree = this.getActiveThesaurus();
       dataTree.children = filteredTree;
-      
-      
-    this.counter = 1;
-      
-      //orders the collection according to the tree
-      this.findRank(this.conceptTree);
-      this.sort();
 
-            //console.log(dataTree);
+      this.sortThesaurus(dataTree);
+      this.counter = 1;
+
+      //orders the collection according to the tree
+      this.findRank(dataTree);
+
+
+    //console.log(dataTree);
       this.conceptTree = dataTree;
       this.trigger("dataChanged");
     }

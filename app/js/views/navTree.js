@@ -2,7 +2,21 @@ var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
 
-    //gets window size
+    // nav listens for changes in the collection.
+    afterInit: function afterInitNav(){
+
+      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
+      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
+      $(window).on("resize", this.resize.bind(this));
+      this.root = this.collection.conceptTree;
+
+    },
+    conceptChanged: function conceptChangedNav() {
+      console.log("oui on dispatche")
+
+    },
+
+    //init size variables
     initSize: function initSizeNav() {
       this.height = $(window).height();
       this.width = $(window).width() ;
@@ -10,10 +24,10 @@ module.exports = View.extend({
       this.duration = 750;
     },
 
-    //
+    //apply size to svg elements
     setSize: function setSizeNav() {
       this.initSize();
- 
+
       this.svg
         .style("width", this.width + "px")
         .style("height", this.height + "px");
@@ -24,40 +38,28 @@ module.exports = View.extend({
 
     },
 
-    // The NavView listens for changes to its model, re-rendering.
-    afterInit: function afterInitNav(){
 
-      
-      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
-      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
-      this.listenTo(this.collection, 'filterChanged', this.filterChanged);
-
-      $(window).on("resize", this.resize.bind(this));
-      this.root = this.collection.conceptTree;
-
-    },
     dataChanged: function dataChanged() {
       this.root = this.collection.conceptTree;
       if(this.root){
         this.root.x0 = this.height / 2;
         this.root.y0 = 0;
         this.preRender();
-        
       }
     },
+
     filterChanged: function filterChanged() {
       console.log("filterChanged");
       this.showFilteredNodes();
     },
+
     resize: function resizeNav() {
-      
       this.setSize();
       this.render(this.root);
     },
+
     // Re-renders the titles of the todo item.
     preRender: function preRenderNav() {
-      //console.log("isloaded", this.collection.loaded);
-      //if(this.collection.loaded){
 
         this.initSize();
         $("nav.nav").empty();
@@ -73,21 +75,18 @@ module.exports = View.extend({
         //
         this.main = this.vis
           .append("svg:g")
-            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);  
+            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
 
         this.setSize();
-     
+
         if(this.root) this.render(this.root);
 
-      //}
- 
     },
     //render the nav
     render : function renderNav(source) {
 
       if(source !== undefined){
-      
-      //if(this.collection.loaded){
+
       // Compute the new tree layout.
       var nodes = this.tree.nodes(this.root).reverse(),
           links = this.tree.links(nodes);
@@ -102,12 +101,14 @@ module.exports = View.extend({
       // Enter any new nodes at the parent's previous position.
       var nodeEnter = node.enter().append("g")
           .attr("class", function(d){ return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id; })
-          .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; });
+          .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+          .on("click", function(d) { this.selectNode(d); }.bind(this)); //d3.selectAll(".node").classed("selected", false); d3.select(".node_" + d.id).classed("selected", true);
+
 
       nodeEnter.append("circle")
           .attr("r", 1e-6)
-          .attr("class", function(d) { return d._children ? "children" : ""; })
-          .on("click", this.toggleNode.bind(this));
+          .attr("class", function(d) { return d._children ? "children" : ""; });
+          //.on("click", this.toggleNode.bind(this));
 
       nodeEnter.append("text")
           .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
@@ -115,7 +116,7 @@ module.exports = View.extend({
           .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
           .text(function(d) { return d.name; })
           .style("fill-opacity", 1e-6)
-          .on("click", this.selectNode.bind(this));
+
 
       // Transition nodes to their new position.
       var nodeUpdate = node.transition()
@@ -175,17 +176,16 @@ module.exports = View.extend({
         d.y0 = d.y;
       });
 
-       this.showSelectedNode();
+       //this.showSelectedNode();
 
       }
     },
     //open / close a branch of the tree
-    toggleNode: function toggleNodeNav(d, i) {
-
-
+    toggleNode: function toggleNodeNav(d) {
+      console.log(d);
       //open all nodes
       function toggleChildren (node, open){
-        console.log(node,open)
+        //console.log(node,open)
         if(!open && node.children){
           node._children = node.children;
           node.children = null;
@@ -215,38 +215,60 @@ module.exports = View.extend({
             toggleChildren(siblings[i], false);
             closeSiblings(siblings[i].parent);
           }
-          //console.log(d);
         }
       }
 
-     closeSiblings(d);
+      closeSiblings(d);
       this.render(this.root)
-      
+
     },
-    showSelectedNode: function showSelectedNodeNav() {
-      //if(this.collection.loaded){
-        d3.select(".node.selected").classed("selected", false);
-        var themodel = this.collection.getActiveConcept();
-        if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
-      //}
-    },
-    showFilteredNodes: function showFilteredNodesNav() {
-      d3.select(".node.filtered").classed("filtered", false);
-     
-      var thelist = this.collection.getFilteredNodes();
-      for(var i=0; i< thelist.length; i++){
-        console.log(thelist[i], thelist[i].attributes.id);
-        d3.select(".node_"+ thelist[i].attributes.id).classed("filtered", true);
+    //
+    findNode: function findNodeNav(node, uri) {
+      var children = node.children || node._children;
+      //console.log("enfants", children, uri)
+      var that = this;
+      var nodeFound;
+      if(children){
+        children.forEach(function(element){
+          if(element.uri === uri) {
+            nodeFound = element;
+          }
+          if(!nodeFound) nodeFound = that.findNode(element, uri);
+        })
+        return nodeFound;
       }
     },
+     //highlight selected concept (listener conceptChanged)
+    showSelectedNode: function showSelectedNodeNav() {
+
+      var themodel = this.collection.getActiveConcept();
+      var id = (themodel) ? themodel.attributes.id : null;
+      console.log(themodel, id)
+
+      if(typeof id === "string") {
+        console.log(themodel.attributes.uri)
+        var alreadySelected = d3.select(".node.node_" + id + ".selected");
+        console.log(id, alreadySelected)
+        if(! alreadySelected[0][0]) {
+          var test = this.findNode(this.root, themodel.attributes.uri);
+          console.log("test", test)
+          this.toggleNode(test);
+          d3.selectAll(".node.selected").classed("selected", false);
+          d3.select(".node_" + id).classed("selected", true);
+        }
+      }
+    },
+
+
+    //when a text concept is clicked
     selectNode: function selectNodeNav(d, i) {
       //send request to the router
       application.router.navigate(application.processUri(d.uri), {trigger : true});
+
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      //if(this.collection.getActiveConcept().id == d.uri) {
-        this.collection.toggleConcept(true);
-      //}
+      this.collection.toggleConcept(true);
+
       d3.event.stopPropagation();
     }
 

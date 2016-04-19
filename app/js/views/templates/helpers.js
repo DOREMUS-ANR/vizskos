@@ -18,7 +18,6 @@ Handlebars.registerHelper('label_with_language', function(labels, language) {
 	})
 	return filteredLabels[0];
 	
-	return "";
 });
 
 Handlebars.registerHelper('translation_language', function(labelObject) {

@@ -1,6 +1,6 @@
 var application = require('./js/application');
 
-$(function() {
+document.addEventListener('DOMContentLoaded', function() {
 
 	//create the app
   	application.initialize();

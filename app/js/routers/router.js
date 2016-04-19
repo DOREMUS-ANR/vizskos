@@ -1,7 +1,7 @@
 var application = require('../application');
 module.exports = Backbone.Router.extend({
     routes:{
-      "" : "showHome",
+      "" : "defaultRoute",
       "about" : "showAbout",
       "*other"    : "defaultRoute"
     },

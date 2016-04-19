@@ -1,13 +1,20 @@
 var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
-    events: {
-      'scroll': 'changeScale',
+
+    // nav listens for changes in the collection.
+    afterInit: function afterInitNav(){
+  
+      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
+      this.listenTo(this.collection, 'dataChanged', this.dataChanged);  
+
+      $(window).on("resize", this.resize.bind(this));
+      this.root = this.collection.conceptTree;
     },
-    changeScale: function zoomNav() {
-      this.main.attr("transform", "translate(" + d3.event.translate + ")scale(" + d3.event.scale + ")");
-    },
-    initSize: function initSizeNav() {
+
+    //initialize size variables
+    //and apply them to svg elements
+    setSize: function setSizeNav(){
       this.height = $(window).height() ;
       this.width = $(window).width() ;
       this.whiteRadius = 120;
@@ -17,9 +24,6 @@ module.exports = View.extend({
       this.x = d3.scale.linear().range([0, this.width]),
       this.y = d3.scale.linear().range([0, this.height]);
       this.duration = 750;
-    },
-    setSize: function setSizeNav(){
-      this.initSize();
       
       this.cluster
         .size([360, this.yRadius - this.whiteRadius]);
@@ -32,23 +36,19 @@ module.exports = View.extend({
         .attr("width", this.width)
         .attr("height", this.height);
     },
+
+    //
     resize: function resizeNav() {
       
       this.setSize();
       this.render(this.root);
     },
 
-    // The NavView listens for changes to its model, re-rendering.
-    afterInit: function afterInitNav(){
-  
-      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
-      this.listenTo(this.collection, 'dataChanged', this.dataChanged);  
-
-      $(window).on("resize", this.resize.bind(this));
-      this.root = this.collection.conceptTree;
-    },
+    //when new data are available
     dataChanged: function dataChanged() {
+      //get them
       this.root = this.collection.conceptTree;
+      //re-render
       if(this.root){
         this.root.x0 = this.height / 2;
         this.root.y0 = 0;
@@ -56,60 +56,57 @@ module.exports = View.extend({
         this.preRender();
       }
     },
-    // Re-renders the titles of the todo item.
-    preRender: function preRenderNav() {
+
+    //preRender - called when the object is created (ie when the type of nav changes)
+    //or when new data are available
+    //(but when nav is opened/closed render function is called directly)
+    preRender: function preRenderNav() {      
+      //remove previous
+      $("nav.nav").empty();
       
-      //if(this.collection.loaded){
-        $("nav.nav").empty();
-        this.cluster = d3.layout.tree()
-          .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
-   
-        //
-        this.diagonal = d3.svg.diagonal.radial()
-          .projection( function(d) { return [d.y, d.x / 180 * Math.PI]; } );
-        //
-        
-        this.svg = d3.select("#vizskos .nav");
-        //this.svg.empty();
-        this.vis =  d3.select("#vizskos .nav svg");
-        if(this.vis) this.vis.remove();
+      //creates tree circular projection
+      this.cluster = d3.layout.tree()
+        .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
+      this.diagonal = d3.svg.diagonal.radial()
+        .projection( function(d) { return [d.y, d.x / 180 * Math.PI]; } );
+      
+      //main svg node  
+      this.svg = d3.select("#vizskos .nav");
+      this.vis = this.svg.append("svg:svg");
+      
+      //node containing all other
+      this.main = this.vis
+        .append("svg:g")
+          .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
 
-        this.vis = this.svg.append("svg:svg");
-        //
-        this.main = this.vis
-          .append("svg:g")
-            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
+      //partition view
+      this.partition = d3.layout.partition()
+        .value(function(d) { return d.size; });
 
-        //partition view
-        this.partition = d3.layout.partition()
-          .value(function(d) { return d.size; });
+      //white circle (decorative)
+      this.arc = this.main.append("svg:path")
+        .attr("class", "arc");
 
-        this.zoom = d3.behavior.zoom()
-          .on("zoom", this.changeScale.bind(this));
-        
-        this.arc = this.main.append("svg:path")
-          .attr("class", "arc");
-
-        this.setSize();
-        
-        if(this.root) this.render(this.root);
-        
-        
-      //}
+      //apply size to elements
+      this.setSize();
+      
+      //call render function
+      if(this.root) this.render(this.root);
      
     },
+
+    //render function
+    //source is this.root
     render : function renderNav(source) {
-      //console.log("la source", source.x, source.x0, this.xRadius, this.yRadius);
+
       if(source !== undefined){
-      
+        
         var nodes = this.cluster.nodes(this.collection.conceptTree);
         var links = this.cluster.links(nodes);
         var whiteRadius = this.whiteRadius;
 
         this.main
             .attr("transform", "translate(" + (100 + this.xRadius ) + "," + (25 + this.yRadius) + ")");
-
-        this.main.call(this.zoom);
 
         var node = this.main.selectAll("g.node").data(nodes);
         var link = this.main.selectAll("path.link").data(links);
@@ -181,60 +178,50 @@ module.exports = View.extend({
     },
     //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d, i) {
-            //open all nodes
-      function toggleChildren (node, open){
-        console.log(node,open)
-        if(!open && node.children){
+      var depth = d.depth;
+      console.log("?", depth);
+      var open = (d._children) ? true : false;
+      //open all nodes
+      function toggleChildren (node){
+        if(((!open && node.depth >= depth) ||(open && node.depth > depth +1) ) && node.children){
           node._children = node.children;
           node.children = null;
-        }else if(open && node._children){
+        }else if(((open && node.depth <= depth) ) && node._children){
           node.children = node._children;
           node._children = null;
         }
       }
-      //open all children
-      function openAllChildren (node){
+      //goes through all children
+      function toggleAllChildren (node){
         var children = node.children || node._children;
         if(children){
           for (var i = 0; i < children.length; i++){
-            //console.log("element",node.children[i]);
-            toggleChildren(children[i], true);
-            openAllChildren(children[i]);
+            toggleChildren(children[i]);
+            toggleAllChildren(children[i]);
           }
-        }
-      }
-      openAllChildren(this.root);
-      //
-      function closeSiblings(node){
-        if (!node.parent) return;
-         var siblings = node.parent.children;
-         for (var i = 0; i < siblings.length; i++){
-          if(siblings[i].uri !== node.uri){
-            toggleChildren(siblings[i], false);
-            closeSiblings(siblings[i].parent);
-          }
-          //console.log(d);
         }
       }
 
-     closeSiblings(d);
-      this.render(this.root)
+      toggleAllChildren(this.root);
+      //
+    
+     this.render(this.root)
     },
-    //highlight selected node (listener conceptChanged)
+    
+    //highlight selected concept (listener conceptChanged)
     showSelectedNode: function showSelectedNodeNav(uri) {
       d3.select(".node.selected").classed("selected", false);
       var themodel = this.collection.getActiveConcept();
       if(themodel) d3.select(".node_"+ themodel.attributes.id).classed("selected", true);
     },
-    //when a node is clicked
+
+    //when a text concept is clicked
     selectNode: function selectNodeNav(d, i) {
       //send request to the router
       application.router.navigate(application.processUri(d.uri), {trigger : true});
       //backbone being smart enough not to trigger the route if concept already selected
       //we need to make sure the pop-up is open
-      //if(this.collection.getActiveConcept() && this.collection.getActiveConcept().id == d.uri) {
-        this.collection.toggleConcept(true);
-      //}
+      this.collection.toggleConcept(true);
       d3.event.stopPropagation();
     }
 

@@ -22924,7 +22924,7 @@ return jQuery;
       window.setTimeout(connect, 1000);
     };
   };
-  connect();
+  //connect();
 })();
 
 (function() {
@@ -22963,7 +22963,7 @@ return jQuery;
       //window.setTimeout(connect, 1000);
     };
   };
-  connect();
+  //connect();
 })();
 
 /*!

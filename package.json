@@ -3,6 +3,7 @@
   "description": "A Visualizer for SKOS-based Thesauri",
   "version": "1.0.0",
   "homepage": "http://www.doremus.org",
+  "repository": "https://github.com/DOREMUS-ANR/vizskos.git",
   "devDependencies": {
     "auto-reload-brunch": "^1.7.8",
     "browserify-brunch": "^1.7.2",
@@ -14,6 +15,7 @@
     "handlebars-brunch": "^1.9.1",
     "hbsfy": "^2.2.1",
     "javascript-brunch": ">= 1.0 < 1.8",
+    "jquery": "^2.1.4",
     "jsonld": "^0.3.22",
     "mocha": "^2.1.0",
     "node-underscorify": "0.0.14",
