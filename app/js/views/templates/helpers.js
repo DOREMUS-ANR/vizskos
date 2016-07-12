@@ -2,7 +2,7 @@ var Handlebars = require("hbsfy/runtime");
 var application = require("../../application");
 
 Handlebars.registerHelper('label_with_language', function(labels, language) {
-	//if a language is specified 
+	//if a language is specified
 
 	if(language) {
 		var filteredLabels = labels.filter(function(element){
@@ -10,19 +10,19 @@ Handlebars.registerHelper('label_with_language', function(labels, language) {
 		})
 		if(filteredLabels[0]) return filteredLabels[0]["@value"];
 	}
-	
-	//otherwise get "pivot" element, the only one which is a string 
-	
+
+	//otherwise get "pivot" element, the only one which is a string
+
 	var filteredLabels = labels.filter(function(element){
 		return typeof element === "string";
 	})
 	return filteredLabels[0];
-	
+
 });
 
 Handlebars.registerHelper('translation_language', function(labelObject) {
 	if (!labelObject) return;
-	//specific to MIMO thesaurus, pivot language has no language attribute 
+	//specific to MIMO thesaurus, pivot language has no language attribute
 	//(it's a convention, not a real language)
 	if (typeof labelObject  === "string") return "pivot";
 	return labelObject["@language"];
@@ -30,7 +30,7 @@ Handlebars.registerHelper('translation_language', function(labelObject) {
 
 Handlebars.registerHelper('translation_label', function(labelObject) {
 	if (!labelObject) return;
-	//specific to MIMO thesaurus, pivot language has no language attribute 
+	//specific to MIMO thesaurus, pivot language has no language attribute
 	//(it's a convention, not a real language)
 	if (typeof labelObject  === "string") return labelObject;
 	return labelObject["@value"];

@@ -4,16 +4,10 @@ module.exports = View.extend({
 
     // nav listens for changes in the collection.
     afterInit: function afterInitNav(){
-
-      this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
+      this.listenTo(this.collection, 'conceptChanged', this.conceptChanged);
       this.listenTo(this.collection, 'dataChanged', this.dataChanged);
       $(window).on("resize", this.resize.bind(this));
       this.root = this.collection.conceptTree;
-
-    },
-    conceptChanged: function conceptChangedNav() {
-      console.log("oui on dispatche")
-
     },
 
     //init size variables
@@ -35,7 +29,6 @@ module.exports = View.extend({
       this.vis
         .attr("width", this.width)
         .attr("height", this.height);
-
     },
 
 
@@ -121,7 +114,11 @@ module.exports = View.extend({
       // Transition nodes to their new position.
       var nodeUpdate = node.transition()
           .duration(this.duration)
-          .attr("class", function(d){ return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id; })
+          .attr("class", function(d){ //return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id;
+            var themodel = this.collection.getActiveConcept();
+            var id = (themodel) ? themodel.attributes.id : null;
+            return (typeof id === "string" && id === d.id) ? "node node_"+d.id+" selected": "node node_"+d.id;
+          }.bind(this))
           .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
 
       nodeUpdate.select("circle")
@@ -170,19 +167,17 @@ module.exports = View.extend({
           })
           .remove();
 
-      // Stash the old positions for transition.
-      nodes.forEach(function(d) {
-        d.x0 = d.x;
-        d.y0 = d.y;
-      });
-
-       //this.showSelectedNode();
+        // Stash the old positions for transition.
+        nodes.forEach(function(d) {
+          d.x0 = d.x;
+          d.y0 = d.y;
+        });
 
       }
     },
     //open / close a branch of the tree
     toggleNode: function toggleNodeNav(d) {
-      console.log(d);
+      //console.log(d);
       //open all nodes
       function toggleChildren (node, open){
         //console.log(node,open)
@@ -209,18 +204,16 @@ module.exports = View.extend({
       //
       function closeSiblings(node){
         if (!node.parent) return;
-         var siblings = node.parent.children;
-         for (var i = 0; i < siblings.length; i++){
+        var siblings = node.parent.children;
+        for (var i = 0; i < siblings.length; i++){
           if(siblings[i].uri !== node.uri){
             toggleChildren(siblings[i], false);
-            closeSiblings(siblings[i].parent);
           }
         }
+        closeSiblings(node.parent);
       }
-
       closeSiblings(d);
-      this.render(this.root)
-
+      this.render(this.root);
     },
     //
     findNode: function findNodeNav(node, uri) {
@@ -239,26 +232,20 @@ module.exports = View.extend({
       }
     },
      //highlight selected concept (listener conceptChanged)
-    showSelectedNode: function showSelectedNodeNav() {
+    conceptChanged: function conceptChangedNav() {
 
       var themodel = this.collection.getActiveConcept();
       var id = (themodel) ? themodel.attributes.id : null;
-      console.log(themodel, id)
 
       if(typeof id === "string") {
-        console.log(themodel.attributes.uri)
         var alreadySelected = d3.select(".node.node_" + id + ".selected");
-        console.log(id, alreadySelected)
-        if(! alreadySelected[0][0]) {
-          var test = this.findNode(this.root, themodel.attributes.uri);
-          console.log("test", test)
-          this.toggleNode(test);
+        if(! alreadySelected[0][0] && d3.select(".node")[0][0]) {
           d3.selectAll(".node.selected").classed("selected", false);
           d3.select(".node_" + id).classed("selected", true);
+          this.toggleNode(this.findNode(this.root, themodel.attributes.uri));
         }
       }
     },
-
 
     //when a text concept is clicked
     selectNode: function selectNodeNav(d, i) {

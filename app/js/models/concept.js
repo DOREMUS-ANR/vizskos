@@ -2,20 +2,20 @@ module.exports = Backbone.Model.extend({
 
   // Default
   defaults: {
-    concept : true
+    concept : true, language : 'fr'
   },
 
   initialize: function initializeConcept(){
-    
+
     //handlebars has trouble with properties containing @
     //sets "clean" properties
   	this.set('uri', this.attributes["@id"]);
     this.set('type', this.attributes["@type"]);
-  	
+
     //generates an id that can be used in classes attached to html elements (without http:// and /)
     var urlParts = this.attributes["@id"].split("/").join("");
     this.set('id', urlParts.substring((urlParts.length -10), urlParts.length));
-    
+
     //conceptScheme (wether it's a top concept or not)
     if(this.attributes["skos:inScheme"]){
       this.set('conceptScheme', this.attributes["skos:inScheme"]);
@@ -25,9 +25,9 @@ module.exports = Backbone.Model.extend({
     var scheme = this.collection.getActiveThesaurus();
     this.set('conceptSchemeName', scheme.name);
     this.set('conceptSchemeClass', scheme.class);
-    
+
     this.set('conceptDefinition', this.attributes["skos:definition"]);
-    
+
     //prefered labels
     if(this.attributes["skos:prefLabel"]){
       this.set('prefLabel', Array.isArray(this.attributes["skos:prefLabel"])? _.sortBy(this.attributes["skos:prefLabel"], this.sortByLanguage) : [this.attributes["skos:prefLabel"]] );
@@ -59,7 +59,7 @@ module.exports = Backbone.Model.extend({
     if(this.attributes["skos:closeMatch"] ){
       this.set('closeMatch', Array.isArray(this.attributes["skos:closeMatch"]) ? this.attributes["skos:closeMatch"] : [this.attributes["skos:closeMatch"]]);
     }
-    
+
   },
   //returns previous or next concept in the collection
   getRelative: function getRelativeConcept(direction) {

@@ -27,15 +27,16 @@ module.exports = Backbone.Collection.extend({
     data: 'http://www.mimo-db.eu/data/HornbostelAndSachs.json',
     base: 'http://www.mimo-db.eu/',
     name: 'Sachs & Hornbostel classification'}
-  ],/*
+  ], /*
   thesauri : [{id : 'http://pas-sages.org/doremus/peuples/',
     named_id: 'Peuples',
-    pattern : '',
+    pattern : 'http://data.bnf.fr/ark',
     endpoint : '',
     data: 'http://pas-sages.org/doremus/peuples/data/peuples.json',
     base: 'http://pas-sages.org/doremus/peuples/',
-    name : 'Peuples preview extraction'}
-  ],/*
+    name : 'Peuples preview extraction',
+    multiple_parents : true}
+  ],*//*
   thesauri : [{id : 'http://pas-sages.org/doremus/iaml/',
     named_id: 'iaml',
     pattern : 'http://data.doremus.org/vocabulary/iaml/',
@@ -324,14 +325,16 @@ module.exports = Backbone.Collection.extend({
 
   //get name of a concept
   getName : function getName (prefLabels){
-
     if(!prefLabels) return "";
     if(Array.isArray(prefLabels)){
       var name = prefLabels.filter(function(prefLabel){
-        return typeof prefLabel === "string";
+        //return typeof prefLabel === "string";
+        return prefLabel["@language"] === "fr";
       });
-      if(Array.isArray(name)){
-        name = name[0];
+      if(Array.isArray(name) && name[0]){
+        name = name[0]["@value"];
+      }else if(prefLabels[0] && typeof prefLabels[0] === "string"){
+        name = prefLabels[0];
       }else{
         name = prefLabels[0]["@value"];
       }
@@ -341,7 +344,6 @@ module.exports = Backbone.Collection.extend({
       var name = prefLabels;
     }
     return name;
-
   },
 
   getNameWithUri : function getNameWithUriThesaurus(uri){
@@ -356,8 +358,11 @@ module.exports = Backbone.Collection.extend({
   getChildren : function getChildren(node){
 
     var that = this;
+    //var children = node.attributes["skos:narrower"];
     return this.models.filter(function (element){
-      return element.attributes["skos:broader"] === node["@id"];
+      return element.attributes["skos:broader"] &&
+      (element.attributes["skos:broader"] === node["@id"] ||
+      element.attributes["skos:broader"].includes(node["@id"]));
 
     }).map(function (childElement){
       var name = that.getName(childElement.attributes["skos:prefLabel"]);
@@ -373,7 +378,7 @@ module.exports = Backbone.Collection.extend({
         result.size = 1;
       }
       return result;
-    });
+    }).sort(that.sortThesaurus);
 
   },
 
@@ -395,30 +400,26 @@ module.exports = Backbone.Collection.extend({
   findRank : function findRankThesaurus (dataObj){
     //gives a rank property to each concept according to its place in the tree
     //to enable prev/next navigation
+    var that = this;
     if(!dataObj) return false;
-    for(var element in dataObj) {
-      var themodel = _.findWhere(this.models, function(elt){
-        elt.attributes["@id"] == element["@id"];
-      });
-      themodel.set("rank", this.counter);
-      this.counter ++;
-      if (element.children) this.findRank(element.children);
-    };
+    dataObj.forEach(function(elt){
+      //elt.rank = that.counter;
+      //console.log(elt);
+      var themodel = _.findWhere(that.models, {id : elt.id });
+      //console.log(themodel);
+      themodel.set('rank', that.counter);
+      that.counter ++;
+      if (elt.children) that.findRank(elt.children);
+
+    })
 
   },
 
-  sortThesaurus : function sortThesaurus (dataObj){
-    //if(!dataObj) return false;
-    if(Array.isArray(dataObj)){
-      dataObj.sort(function(a, b){
-        //console.log(a, b);
-        var nameA=a.name.toLowerCase(), nameB=b.name.toLowerCase();
+  sortThesaurus : function sortThesaurus (a, b){
+
+    var nameA=a.name.toLowerCase(), nameB=b.name.toLowerCase();
         //console.log(nameA, nameB);
-        return nameA.localeCompare(nameB);
-      })
-    }
-    //console.log(dataObj);
-    if (dataObj.children) this.sortThesaurus(dataObj.children);
+    return nameA.localeCompare(nameB);
 
   },
 
@@ -432,18 +433,24 @@ module.exports = Backbone.Collection.extend({
     if(node && node["skos:broader"] ){
       var grandParent;
       var elementParent = data.filter(function (elt){
-        return elt["@id"] === node["skos:broader"];
+        return elt["@id"] === node["skos:broader"] ||
+        node["skos:broader"].includes(elt["@id"]);
       });
-      if(elementParent[0] && elementParent[0].parents){
-        grandParent = elementParent[0].parents;
-      }else {
-        grandParent =  this.getParent(elementParent, data);
+      if(this.activeThesaurus.multiple_parents === true){
+        parent = Array.isArray(node["skos:broader"]) ? node["skos:broader"] : [node["skos:broader"]];
+      }else{
+        if(elementParent[0] && elementParent[0].parents){
+          grandParent = elementParent[0].parents;
+        }else {
+          grandParent =  this.getParent(elementParent, data);
+        }
+        if(grandParent.length>0){
+          parent = grandParent;
+        }
+        parent = parent.concat([node["skos:broader"]]);
       }
-      if(grandParent.length>0){
-        parent = grandParent;
-      }
-      parent = parent.concat([node["skos:broader"]]);
     }
+    //console.log(parent);
     return parent;
 
   },
@@ -470,8 +477,6 @@ module.exports = Backbone.Collection.extend({
 
     if(this.models.length>1){
 
-
-
     //creates hierarchical tree for nav
       var filteredTree = this.models.filter(function(element){
         return element.attributes["skos:topConceptOf"] !== undefined || that.getName(element.attributes["skos:prefLabel"]).match(/^Ethnologie --/);
@@ -493,14 +498,16 @@ module.exports = Backbone.Collection.extend({
       var dataTree = this.getActiveThesaurus();
       dataTree.children = filteredTree;
 
-      this.sortThesaurus(dataTree);
+
       this.counter = 1;
+      // dataTree = this.sortThesaurus(dataTree, 1);
 
       //orders the collection according to the tree
-      this.findRank(dataTree);
+      this.findRank(dataTree.children);
+      this.models = _.sortBy(this.models, function(elt){ return Number(elt.attributes.rank);});
+      //console.log(this.counter, this.models);
 
-
-    //console.log(dataTree);
+      //console.log(dataTree);
       this.conceptTree = dataTree;
       this.trigger("dataChanged");
     }

@@ -10,9 +10,9 @@ module.exports = View.extend({
       'click .next': 'next',
       'click .prev': 'prev'
     },
-    
+
     template : require('./templates/concept.hbs'),
-    
+
     //set up listeners
     afterInit: function afterInitConcept(){
       this.listenTo(this.collection, 'conceptChanged', this.render);

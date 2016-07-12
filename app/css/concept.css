@@ -4,7 +4,7 @@
 article .concept header {
   width: 100%;
   font-family: Arial, Helvetica, sans-serif;
-  border-bottom: 1px solid #ccc; 
+  border-bottom: 1px solid #ccc;
   background: steelblue;
   position: relative;
   overflow: auto;
@@ -17,11 +17,13 @@ article .concept p.context{
   font-size: 0.7em;
   padding: 0;
   clear: none;
-  
+
 }
-article .concept p.context a{
+article .concept p.context a,
+article .concept p.context span{
   color: #dedede;
   padding: 4px 0 0px 30px;
+  display: block;
 }
 article .concept p.context a:hover{
   color: #fff;
@@ -54,20 +56,20 @@ article .concept .prev:hover {
   color: #aaa;
 }
 article .concept {
-  
+
   position: absolute;
   top: 20%;
   right: 10%;
   width: 35%;
   height: 60%;
-  
+
 }
 article.closed .concept {
   height: auto;
-  
+
 }
 article .concept detail{
-  
+
 }
 
 article .concept .body {
