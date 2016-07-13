@@ -9,19 +9,17 @@ var SelectNavView = require('./selectNav');
 var _ = require('underscore');
 
 module.exports = View.extend({
-    
-    el: '#vizskos',
+
+
     template : require('./templates/main.hbs'),
     page: null,
 
     //if page has changed, render again
     setPage: function setPageApp(newPage) {
-    
       if(newPage !== this.page){
       	this.page = newPage;
       	(this.$('article').length > 0) ? this.afterRender() : this.render();
       }
-      
     },
 
     //after rendering

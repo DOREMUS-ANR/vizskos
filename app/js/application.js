@@ -1,16 +1,16 @@
 var Application = {
 
-  initialize: function initializeApplication() {
+  initialize: function initializeApplication(params) {
 
   	var AppView = require('./views/app');
   	var Router = require('./routers/router');
   	var Thesaurus = require('./models/thesaurus');
 
     //create the collection of concepts
-    this.collection = new Thesaurus();
+    this.collection = new Thesaurus([],{ thesauri: params.thesauri });
 
     //create the app view, with a reference to the collection and this application
-    this.appView = new AppView({collection : this.collection, attributes : { application: this }});
+    this.appView = new AppView({ el: "#" + params.id, collection : this.collection, attributes : { application: this }});
 
     //create the router, with a reference to the collection and this application
     this.router = new Router({collection : this.collection, attributes : { application: this }});

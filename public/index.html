@@ -15,7 +15,35 @@
 
 		<script type="text/javascript" src="/javascripts/vendor.js"></script>
 		<script type="text/javascript" src="/javascripts/app.js"></script>
-
+		<script type="text/javascript">
+		<!--
+	  $(document).ready(function(){
+			document.VizSKOS.initialize({
+				id : 'vizskos',
+				thesauri : [
+					{
+						id : 'http://www.mimo-db.eu/InstrumentsKeywords',
+				    named_id: 'InstrumentsKeywords',
+				    pattern : 'http://www.mimo-db.eu/InstrumentsKeywords',
+				    endpoint : 'http://data.mimo-db.eu/sparql/describe?uri=',
+				    data: 'http://www.mimo-db.eu/data/InstrumentsKeywords.json',
+				    base: 'http://www.mimo-db.eu/',
+				    name : 'MIMO Thesaurus'
+				 	},
+		    	{
+		    		id : 'http://www.mimo-db.eu/HornbostelAndSachs',
+				    named_id: 'HornbostelAndSachs',
+				    pattern : 'http://www.mimo-db.eu/HornbostelAndSachs',
+				    endpoint : 'http://data.mimo-db.eu/sparql/describe?uri=',
+				    data: 'http://www.mimo-db.eu/data/HornbostelAndSachs.json',
+				    base: 'http://www.mimo-db.eu/',
+				    name: 'Sachs & Hornbostel classification'
+				 	}
+		  	]
+			});
+		});
+		-->
+		</script>
 
 	</body>
 </html>

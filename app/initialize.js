@@ -1,11 +1,13 @@
 var application = require('./js/application');
 
+document.VizSKOS = application;
+
 document.addEventListener('DOMContentLoaded', function() {
 
 	//create the app
-  	application.initialize();
-  	
-  	//route the initial url
-  	Backbone.history.start({ pushState: true });
-  	
+  //application.initialize();
+
+  //route the initial url
+  Backbone.history.start({ pushState: true });
+
 });

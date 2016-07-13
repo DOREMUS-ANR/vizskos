@@ -13,7 +13,7 @@ module.exports = Backbone.Collection.extend({
   activeThesaurus : null,
   thesaurusLoading : null,
   comparator: 'rank',
- thesauri : [{id : 'http://www.mimo-db.eu/InstrumentsKeywords',
+ /*thesauri : [{id : 'http://www.mimo-db.eu/InstrumentsKeywords',
     named_id: 'InstrumentsKeywords',
     pattern : 'http://www.mimo-db.eu/InstrumentsKeywords',
     endpoint : 'http://data.mimo-db.eu/sparql/describe?uri=',
@@ -27,7 +27,7 @@ module.exports = Backbone.Collection.extend({
     data: 'http://www.mimo-db.eu/data/HornbostelAndSachs.json',
     base: 'http://www.mimo-db.eu/',
     name: 'Sachs & Hornbostel classification'}
-  ], /*
+  ],
   thesauri : [{id : 'http://pas-sages.org/doremus/peuples/',
     named_id: 'Peuples',
     pattern : 'http://data.bnf.fr/ark',
@@ -66,6 +66,7 @@ module.exports = Backbone.Collection.extend({
   },
 
   initialize : function(models, options){
+    this.thesauri = options.thesauri;
   },
 
   //return the active concept
