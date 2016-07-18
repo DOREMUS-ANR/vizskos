@@ -11,8 +11,12 @@ Run the content of the `public` directory on any server
 
 NodeJS is required, with Bower.
 
-        npm install -g bower
+    npm install -g bower
+
+Setup:
+
+    npm install
 
 Run in development mode:
 
-        npm start
+    npm start
