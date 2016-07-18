@@ -1,20 +1,18 @@
-# vizskos
+# VizSKOS
 A Visualizer for SKOS-based Thesaurus
 
+Architecture based on Backbone, visualization on D3js, web development on Brunch.
 
-##Client-side Single page app
+## Client-side Single page app
 
 Run the content of the `public` directory on any server
 
+## Development
 
-##Developpement
+NodeJS is required, with Bower.
 
-Requires nodejs & npm
+        npm install -g bower
 
-Run `npm start` in `vizskos` directory to start the local dev environnment
+Run in development mode:
 
-For `node_modules`, see package.json
-
-For brunch config, see config.coffee
-
-Architecture based on Backbone, vizualisation on d3js
+        npm start

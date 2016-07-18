@@ -4,9 +4,11 @@
   "version": "1.0.0",
   "homepage": "http://www.doremus.org",
   "repository": "https://github.com/DOREMUS-ANR/vizskos.git",
+  "dependencies": {},
   "devDependencies": {
     "auto-reload-brunch": "^1.7.8",
-    "browserify-brunch": "^1.7.2",
+    "browserify": "^13.0.1",
+    "browserify-brunch": "^1.7.3",
     "brunch": "^1.8.3",
     "chai": "^1.10.0",
     "clean-css-brunch": ">= 1.0 < 1.8",
@@ -15,13 +17,11 @@
     "handlebars-brunch": "^1.9.1",
     "hbsfy": "^2.2.1",
     "javascript-brunch": ">= 1.0 < 1.8",
-    "jquery": "^2.1.4",
-    "jsonld": "^0.3.22",
+    "jsonld": "^0.4.11",
     "mocha": "^2.1.0",
     "node-underscorify": "0.0.14",
     "uglify-js-brunch": ">= 1.0 < 1.8",
-    "underscore": "^1.8.3",
-    "underscore-brunch": "^1.4.0"
+    "underscore": "^1.8.3"
   },
   "scripts": {
     "start": "brunch watch --server"
@@ -31,5 +31,15 @@
       "node-underscorify",
       "hbsfy"
     ]
+  },
+  "keywords": [
+    "SKOS",
+    "vocabulary",
+    "semantic",
+    "web"
+  ],
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/DOREMUS-ANR/vizskos/issues"
   }
 }

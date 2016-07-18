@@ -4,9 +4,9 @@ module.exports = View.extend({
 
     // nav listens for changes in the collection.
     afterInit: function afterInitNav(){
-  
+
       this.listenTo(this.collection, 'conceptChanged', this.showSelectedNode);
-      this.listenTo(this.collection, 'dataChanged', this.dataChanged);  
+      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
 
       $(window).on("resize", this.resize.bind(this));
       this.root = this.collection.conceptTree;
@@ -21,10 +21,10 @@ module.exports = View.extend({
       this.yRadius = (this.height - 40) / 2;
       this.xRadius = this.yRadius;
       this.rotate = 0;
-      this.x = d3.scale.linear().range([0, this.width]),
+      this.x = d3.scale.linear().range([0, this.width]);
       this.y = d3.scale.linear().range([0, this.height]);
       this.duration = 750;
-      
+
       this.cluster
         .size([360, this.yRadius - this.whiteRadius]);
 
@@ -39,7 +39,7 @@ module.exports = View.extend({
 
     //
     resize: function resizeNav() {
-      
+
       this.setSize();
       this.render(this.root);
     },
@@ -60,20 +60,20 @@ module.exports = View.extend({
     //preRender - called when the object is created (ie when the type of nav changes)
     //or when new data are available
     //(but when nav is opened/closed render function is called directly)
-    preRender: function preRenderNav() {      
+    preRender: function preRenderNav() {
       //remove previous
       $("nav.nav").empty();
-      
+
       //creates tree circular projection
       this.cluster = d3.layout.tree()
         .separation(function(a, b) { return (a.parent == b.parent ? 1 : 2) / a.depth; });
       this.diagonal = d3.svg.diagonal.radial()
         .projection( function(d) { return [d.y, d.x / 180 * Math.PI]; } );
-      
-      //main svg node  
+
+      //main svg node
       this.svg = d3.select("#vizskos .nav");
       this.vis = this.svg.append("svg:svg");
-      
+
       //node containing all other
       this.main = this.vis
         .append("svg:g")
@@ -89,10 +89,10 @@ module.exports = View.extend({
 
       //apply size to elements
       this.setSize();
-      
+
       //call render function
       if(this.root) this.render(this.root);
-     
+
     },
 
     //render function
@@ -100,7 +100,7 @@ module.exports = View.extend({
     render : function renderNav(source) {
 
       if(source !== undefined){
-        
+
         var nodes = this.cluster.nodes(this.collection.conceptTree);
         var links = this.cluster.links(nodes);
         var whiteRadius = this.whiteRadius;
@@ -110,7 +110,7 @@ module.exports = View.extend({
 
         var node = this.main.selectAll("g.node").data(nodes);
         var link = this.main.selectAll("path.link").data(links);
-        
+
         this.arc.attr("d", d3.svg.arc().innerRadius(this.yRadius - this.whiteRadius).outerRadius(this.yRadius).startAngle(0).endAngle(2 * Math.PI));
 
         var linkEnter = link.enter()
@@ -121,7 +121,7 @@ module.exports = View.extend({
         var linkUpdate = link.transition()
           .duration(this.duration)
           .attr("d", this.diagonal);
-         
+
 
         var linkExit = link.exit().transition()
           .duration(this.duration)
@@ -132,7 +132,7 @@ module.exports = View.extend({
           .append("svg:g")
             .attr("class", function(d) { return d.children ? "node parent node_" + d.id : "node child node_" + d.id; })
             .attr("transform", function(d,i) { return  "rotate(" + (source.x - 90) + ")translate(" + (source.y ) + ")"; });
-        
+
 
         var nodeEnterCircle = nodeEnter.append("svg:circle")
           .attr("r", 4,5)
@@ -153,7 +153,7 @@ module.exports = View.extend({
 
         nodeUpdate.select("circle")
           .attr("class", function(d) { return d._children ? "children" : ""; });
-        
+
 
         var nodeExit = node.exit()
           .transition()
@@ -204,10 +204,10 @@ module.exports = View.extend({
 
       toggleAllChildren(this.root);
       //
-    
+
      this.render(this.root)
     },
-    
+
     //highlight selected concept (listener conceptChanged)
     showSelectedNode: function showSelectedNodeNav(uri) {
       d3.select(".node.selected").classed("selected", false);
