@@ -1,4 +1,5 @@
 var _ = require('underscore');
+const Backbone = require('backbone');
 var helpers = require('./templates/helpers');
 
 module.exports = Backbone.View.extend({

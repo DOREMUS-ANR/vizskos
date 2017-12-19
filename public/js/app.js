@@ -1,34 +1,226 @@
+(function() {
+  'use strict';
+
+  var globals = typeof global === 'undefined' ? self : global;
+  if (typeof globals.require === 'function') return;
+
+  var modules = {};
+  var cache = {};
+  var aliases = {};
+  var has = {}.hasOwnProperty;
+
+  var expRe = /^\.\.?(\/|$)/;
+  var expand = function(root, name) {
+    var results = [], part;
+    var parts = (expRe.test(name) ? root + '/' + name : name).split('/');
+    for (var i = 0, length = parts.length; i < length; i++) {
+      part = parts[i];
+      if (part === '..') {
+        results.pop();
+      } else if (part !== '.' && part !== '') {
+        results.push(part);
+      }
+    }
+    return results.join('/');
+  };
+
+  var dirname = function(path) {
+    return path.split('/').slice(0, -1).join('/');
+  };
+
+  var localRequire = function(path) {
+    return function expanded(name) {
+      var absolute = expand(dirname(path), name);
+      return globals.require(absolute, path);
+    };
+  };
+
+  var initModule = function(name, definition) {
+    var hot = hmr && hmr.createHot(name);
+    var module = {id: name, exports: {}, hot: hot};
+    cache[name] = module;
+    definition(module.exports, localRequire(name), module);
+    return module.exports;
+  };
+
+  var expandAlias = function(name) {
+    return aliases[name] ? expandAlias(aliases[name]) : name;
+  };
+
+  var _resolve = function(name, dep) {
+    return expandAlias(expand(dirname(name), dep));
+  };
+
+  var require = function(name, loaderPath) {
+    if (loaderPath == null) loaderPath = '/';
+    var path = expandAlias(name);
+
+    if (has.call(cache, path)) return cache[path].exports;
+    if (has.call(modules, path)) return initModule(path, modules[path]);
+
+    throw new Error("Cannot find module '" + name + "' from '" + loaderPath + "'");
+  };
+
+  require.alias = function(from, to) {
+    aliases[to] = from;
+  };
+
+  var extRe = /\.[^.\/]+$/;
+  var indexRe = /\/index(\.[^\/]+)?$/;
+  var addExtensions = function(bundle) {
+    if (extRe.test(bundle)) {
+      var alias = bundle.replace(extRe, '');
+      if (!has.call(aliases, alias) || aliases[alias].replace(extRe, '') === alias + '/index') {
+        aliases[alias] = bundle;
+      }
+    }
+
+    if (indexRe.test(bundle)) {
+      var iAlias = bundle.replace(indexRe, '');
+      if (!has.call(aliases, iAlias)) {
+        aliases[iAlias] = bundle;
+      }
+    }
+  };
+
+  require.register = require.define = function(bundle, fn) {
+    if (bundle && typeof bundle === 'object') {
+      for (var key in bundle) {
+        if (has.call(bundle, key)) {
+          require.register(key, bundle[key]);
+        }
+      }
+    } else {
+      modules[bundle] = fn;
+      delete cache[bundle];
+      addExtensions(bundle);
+    }
+  };
+
+  require.list = function() {
+    var list = [];
+    for (var item in modules) {
+      if (has.call(modules, item)) {
+        list.push(item);
+      }
+    }
+    return list;
+  };
+
+  var hmr = globals._hmr && new globals._hmr(_resolve, require, modules, cache);
+  require._cache = cache;
+  require.hmr = hmr && hmr.wrap;
+  require.brunch = true;
+  globals.require = require;
+})();
+
+(function() {
+var global = typeof window === 'undefined' ? this : window;
+var process;
+var __makeRelativeRequire = function(require, mappings, pref) {
+  var none = {};
+  var tryReq = function(name, pref) {
+    var val;
+    try {
+      val = require(pref + '/node_modules/' + name);
+      return val;
+    } catch (e) {
+      if (e.toString().indexOf('Cannot find module') === -1) {
+        throw e;
+      }
+
+      if (pref.indexOf('node_modules') !== -1) {
+        var s = pref.split('/');
+        var i = s.lastIndexOf('node_modules');
+        var newPref = s.slice(0, i).join('/');
+        return tryReq(name, newPref);
+      }
+    }
+    return none;
+  };
+  return function(name) {
+    if (name in mappings) name = mappings[name];
+    if (!name) return;
+    if (name[0] !== '.' && pref) {
+      var val = tryReq(name, pref);
+      if (val !== none) return val;
+    }
+    return require(name);
+  }
+};
+require.register("initialize.js", function(exports, require, module) {
+const jQuery = require('jquery');
+const Backbone = require('backbone');
 var application = require('./js/application');
 
-document.VizSKOS = application;
+window.application = application;
 
 document.addEventListener('DOMContentLoaded', function() {
-
-	//create the app
-  //application.initialize();
-
+  application.initialize({
+    id: 'vizskos',
+    thesauri: [{
+        id: 'http://www.mimo-db.eu/InstrumentsKeywords',
+        /*URI of the thesaurus*/
+        named_id: 'InstrumentsKeywords',
+        /*id used in the DOM (without / : . chars)*/
+        pattern: 'http://www.mimo-db.eu/InstrumentsKeywords',
+        /*used to find out if the URI of a concept belongs to a thesaurus */
+        endpoint: 'http://data.mimo-db.eu/sparql/describe?uri=',
+        /*SPARQL endpoint*/
+        data: 'http://www.mimo-db.eu/data/InstrumentsKeywords.json',
+        /*json-ld fallback file*/
+        base: 'http://www.mimo-db.eu/',
+        /*host domain*/
+        name: 'MIMO Thesaurus' /*display name*/
+      },
+      {
+        id: 'http://www.mimo-db.eu/HornbostelAndSachs',
+        named_id: 'HornbostelAndSachs',
+        pattern: 'http://www.mimo-db.eu/HornbostelAndSachs',
+        endpoint: 'http://data.mimo-db.eu/sparql/describe?uri=',
+        data: 'http://www.mimo-db.eu/data/HornbostelAndSachs.json',
+        base: 'http://www.mimo-db.eu/',
+        name: 'Sachs & Hornbostel classification'
+      }
+    ]
+  });
   //route the initial url
-  Backbone.history.start({ pushState: true });
+  Backbone.history.start({
+    pushState: true
+  });
 
 });
 
+});
+
+require.register("js/application.js", function(exports, require, module) {
+var AppView = require('./views/app');
+var Router = require('./routers/router');
+var Thesaurus = require('./models/thesaurus');
+
 var Application = {
-
   initialize: function initializeApplication(params) {
-
-  	var AppView = require('./views/app');
-  	var Router = require('./routers/router');
-  	var Thesaurus = require('./models/thesaurus');
-
     //create the collection of concepts
-    this.collection = new Thesaurus([],{ thesauri: params.thesauri });
+    this.collection = new Thesaurus([], {
+      thesauri: params.thesauri
+    });
 
     //create the app view, with a reference to the collection and this application
-    this.appView = new AppView({ el: "#" + params.id, collection : this.collection, attributes : { application: this }});
+    this.appView = new AppView({
+      el: "#" + params.id,
+      collection: this.collection,
+      attributes: {
+        application: this
+      }
+    });
 
     //create the router, with a reference to the collection and this application
-    this.router = new Router({collection : this.collection, attributes : { application: this }});
-
+    this.router = new Router({
+      collection: this.collection,
+      attributes: {
+        application: this
+      }
+    });
   },
 
   //fonction to handle the different kinds of URLs
@@ -45,20 +237,20 @@ var Application = {
   //ex 4
   //the URL is "http://localhost:3333/http://www.mimo-db.eu/InstrumentsKeywords/3305"
   //the path is "http://www.mimo-db.eu/InstrumentsKeywords/3305"
-  processUri : function processUriApplication(path){
+  processUri: function processUriApplication(path) {
     //path = "doremus/peuples/" + path;
     path = path;
     //if the path is the same as the location (ex 1)
-    if(path.search(location.origin) !== -1){
+    if (path.search(location.origin) !== -1) {
       //replace it with example 3, more user friendly
       return path.replace(location.origin, "");
-    //else if the path is not the same as the location
-    }else {
+      //else if the path is not the same as the location
+    } else {
       //if the path does not contain uri=, add it
-      if(path.search("uri=http") === -1){
+      if (path.search("uri=http") === -1) {
         return path.replace("http", "uri=http");
-      //pass on the path
-      }else{
+        //pass on the path
+      } else {
         return path;
       }
     }
@@ -67,8 +259,13 @@ var Application = {
 
 module.exports = Application;
 
-module.exports = Backbone.Model.extend({
+});
 
+require.register("js/models/concept.js", function(exports, require, module) {
+const _ = require('underscore');
+const Backbone = require('backbone');
+
+module.exports = Backbone.Model.extend({
   // Default
   defaults: {
     concept : true, language : 'fr'
@@ -157,6 +354,13 @@ module.exports = Backbone.Model.extend({
     return 0;
   }
 });
+
+});
+
+require.register("js/models/thesaurus.js", function(exports, require, module) {
+const _ = require('underscore');
+const $ = require('jquery');
+const Backbone = require('backbone');
 
 var jsonld = require('jsonld');
 var concept = require('./concept');
@@ -678,40 +882,47 @@ module.exports = Backbone.Collection.extend({
 
 });
 
+});
+
+require.register("js/routers/router.js", function(exports, require, module) {
+const Backbone = require('backbone');
 var application = require('../application');
+
 module.exports = Backbone.Router.extend({
-    routes:{
-      "" : "defaultRoute", /* showHome to use the Home template*/
-      "about" : "showAbout",
-      "*other"    : "defaultRoute"
-    },
+  routes: {
+    "": "defaultRoute",
+    /* showHome to use the Home template*/
+    "about": "showAbout",
+    "*other": "defaultRoute"
+  },
 
-    showAbout: function showAbout( ) {
-      //console.log("On aimerait afficher les infos ");
+  showAbout: function showAbout() {
+    console.log("On aimerait afficher les infos ");
 
-    },
+  },
 
-    showHome: function showHome( ) {
-      //
-      application.appView.setPage('home');
-      Backbone.history.checkUrl();
-    },
+  showHome: function showHome() {
+    window.application.appView.setPage('home');
+    Backbone.history.checkUrl();
+  },
 
-    defaultRoute: function(other){
-      if(!other) other ="";
-      application.appView.setPage('thesaurus');
-      //if other is defined, remove "uri=" to get the URI
-      //other = other.replace("doremus/peuples/uri=", "") ;
-      other = other.replace("uri=", "") ;
-      //send the URI to the collection
-      application.collection.setActiveURI(other);
-      //update router
-      Backbone.history.checkUrl();
+  defaultRoute: function(other) {
+    other = other || '';
 
-    }
+    window.application.appView.setPage('thesaurus');
+    //if other is defined, remove "uri=" to get the URI
+    //other = other.replace("doremus/peuples/uri=", "") ;
+    other = other.replace("uri=", "");
+    //send the URI to the collection
+    window.application.collection.setActiveURI(other);
+    //update router
+    Backbone.history.checkUrl();
+  }
+});
 
 });
 
+require.register("js/views/app.js", function(exports, require, module) {
 var View = require('./view');
 var ConceptView = require('./concept');
 var FooterView = require('./footer');
@@ -723,94 +934,130 @@ var SelectNavView = require('./selectNav');
 var _ = require('underscore');
 
 module.exports = View.extend({
-
-
-    template : require('./templates/main.hbs'),
-    page: null,
-
-    //if page has changed, render again
-    setPage: function setPageApp(newPage) {
-      if(newPage !== this.page){
-      	this.page = newPage;
-      	(this.$('article').length > 0) ? this.afterRender() : this.render();
-      }
-    },
-
-    //after rendering
-    afterRender: function afterRenderApp() {
-
-     	if(this.page === 'home'){
-     		this.headerView = new HeaderView({collection : this.collection, el: this.$('header .logo')}).render();
-     		this.homeView = new HomeView({collection : this.collection, el: this.$('article')}).render();
-     		this.footerView = new FooterView({collection : this.collection, el: this.$('footer')}).render();
-     	}else if(this.page === 'thesaurus'){
-      	this.headerView = new HeaderView({collection : this.collection, el: this.$('header .logo')}).render();
-      	this.conceptView = new ConceptView({collection : this.collection, el: this.$('article')});
-      	this.navView = new NavView({collection : this.collection, el: this.$('nav.nav')}).render();
-      	this.selectNavView = new SelectNavView({collection : this.collection, el: this.$('header .tools') }).render();
-
-      }
+  template: require('./templates/main.hbs'),
+  page: null,
+  //if page has changed, render again
+  setPage: function setPageApp(newPage) {
+    if (newPage !== this.page) {
+      this.page = newPage;
+      this.$('article').length ? this.afterRender(): this.render();
     }
+  },
+
+  //after rendering
+  afterRender: function afterRenderApp() {
+
+    if (this.page === 'home') {
+      this.headerView = new HeaderView({
+        collection: this.collection,
+        el: this.$('header .logo')
+      }).render();
+      this.homeView = new HomeView({
+        collection: this.collection,
+        el: this.$('article')
+      }).render();
+      this.footerView = new FooterView({
+        collection: this.collection,
+        el: this.$('footer')
+      }).render();
+    } else if (this.page === 'thesaurus') {
+      this.headerView = new HeaderView({
+        collection: this.collection,
+        el: this.$('header .logo')
+      }).render();
+      this.conceptView = new ConceptView({
+        collection: this.collection,
+        el: this.$('article')
+      });
+      this.navView = new NavView({
+        collection: this.collection,
+        el: this.$('nav.nav')
+      }).render();
+      this.selectNavView = new SelectNavView({
+        collection: this.collection,
+        el: this.$('header .tools')
+      }).render();
+
+    }
+  }
 });
 
+});
+
+require.register("js/views/concept.js", function(exports, require, module) {
+const _ = require('underscore');
+const $ = require('jquery');
+const Backbone = require('backbone');
 var View = require('./view');
 var application = require('../application');
 require('./templates/helpers.js');
+const template = require('./templates/concept.hbs');
 
 module.exports = View.extend({
 
-    events: {
-      'click .close': 'close',
-      'click .link': 'activateLink',
-      'click .next': 'next',
-      'click .prev': 'prev'
-    },
+  events: {
+    'click .close': 'close',
+    'click .link': 'activateLink',
+    'click .next': 'next',
+    'click .prev': 'prev'
+  },
 
-    template : require('./templates/concept.hbs'),
+  template,
 
-    //set up listeners
-    afterInit: function afterInitConcept(){
-      this.listenTo(this.collection, 'conceptChanged', this.render);
-      this.listenTo(this.collection, 'conceptToggled', this.conceptToggled);
-      this.listenTo(this.collection, 'dataChanged', this.render);
-    },
-    //get information to render the template
-    getRenderData: function getConceptRenderData(){
-      this.model = this.collection.getActiveConcept();
-      return this.model ? $.extend({ language :'en' }, this.model.attributes) : this.collection.getActiveThesaurus();
-    },
-    //close the concept section
-    close: function closeConcept(element) {
-      this.collection.toggleConcept();
-      element.preventDefault();
-    },
-    //show next concept
-    next: function nextConcept(element) {
-      var newmodel = this.model.getRelative(1);
-      application.router.navigate(application.processUri(newmodel.attributes["@id"]), {trigger : true});
-      element.preventDefault();
-    },
-    //show previous concept
-    prev: function prevConcept(element) {
-      var newmodel = this.model.getRelative(-1);
-      application.router.navigate(application.processUri(newmodel.attributes["@id"]), {trigger : true});
-      element.preventDefault();
-    },
-    //show / hide concept
-    conceptToggled: function conceptToggledConcept(element) {
-      if(this.collection.conceptClosed){
-        this.$el.addClass("closed");
-      }else{
-        this.$el.removeClass("closed");
-      }
-    },
-    // Open / reduce the concept section
-    activateLink: function activateLinkConcept(element) {
-      application.router.navigate(application.processUri($(element.currentTarget).attr("href")), {trigger : true});
-      element.preventDefault();
+  //set up listeners
+  afterInit: function afterInitConcept() {
+    this.listenTo(this.collection, 'conceptChanged', this.render);
+    this.listenTo(this.collection, 'conceptToggled', this.conceptToggled);
+    this.listenTo(this.collection, 'dataChanged', this.render);
+  },
+  //get information to render the template
+  getRenderData: function getConceptRenderData() {
+    this.model = this.collection.getActiveConcept();
+    return this.model ? $.extend({
+      language: 'en'
+    }, this.model.attributes) : this.collection.getActiveThesaurus();
+  },
+  //close the concept section
+  close: function closeConcept(element) {
+    this.collection.toggleConcept();
+    element.preventDefault();
+  },
+  //show next concept
+  next: function nextConcept(element) {
+    var newmodel = this.model.getRelative(1);
+    application.router.navigate(application.processUri(newmodel.attributes["@id"]), {
+      trigger: true
+    });
+    element.preventDefault();
+  },
+  //show previous concept
+  prev: function prevConcept(element) {
+    var newmodel = this.model.getRelative(-1);
+    application.router.navigate(application.processUri(newmodel.attributes["@id"]), {
+      trigger: true
+    });
+    element.preventDefault();
+  },
+  //show / hide concept
+  conceptToggled: function conceptToggledConcept(element) {
+    if (this.collection.conceptClosed) {
+      this.$el.addClass("closed");
+    } else {
+      this.$el.removeClass("closed");
     }
+  },
+  // Open / reduce the concept section
+  activateLink: function activateLinkConcept(element) {
+    application.router.navigate(application.processUri($(element.currentTarget).attr("href")), {
+      trigger: true
+    });
+    element.preventDefault();
+  }
 });
 
+});
+
+require.register("js/views/footer.js", function(exports, require, module) {
 var View = require('./view');
 
 module.exports = View.extend({
@@ -827,6 +1074,9 @@ module.exports = View.extend({
     //
 });
 
+});
+
+require.register("js/views/header.js", function(exports, require, module) {
 var View = require('./view');
 
 module.exports = View.extend({
@@ -843,6 +1093,9 @@ module.exports = View.extend({
     //
 });
 
+});
+
+require.register("js/views/home.js", function(exports, require, module) {
 var View = require('./view');
 
 module.exports = View.extend({
@@ -861,6 +1114,9 @@ module.exports = View.extend({
     }
 });
 
+});
+
+require.register("js/views/nav.js", function(exports, require, module) {
 var View = require('./view');
 var NavCircle = require('./navCircle');
 var NavTree = require('./navTree');
@@ -888,6 +1144,9 @@ module.exports = View.extend({
 
 });
 
+});
+
+require.register("js/views/navCircle.js", function(exports, require, module) {
 var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
@@ -1117,269 +1376,321 @@ module.exports = View.extend({
 
 });
 
+});
+
+require.register("js/views/navTree.js", function(exports, require, module) {
+const $ = require('jquery');
+const d3 = require('d3');
+
 var View = require('./view');
-var application = require('../application');
+var application;
 module.exports = View.extend({
 
-    // nav listens for changes in the collection.
-    afterInit: function afterInitNav(){
-      this.listenTo(this.collection, 'conceptChanged', this.conceptChanged);
-      this.listenTo(this.collection, 'dataChanged', this.dataChanged);
-      $(window).on("resize", this.resize.bind(this));
-      this.root = this.collection.conceptTree;
-    },
+  // nav listens for changes in the collection.
+  afterInit: function afterInitNav() {
+    application = window.application;
+    this.listenTo(this.collection, 'conceptChanged', this.conceptChanged);
+    this.listenTo(this.collection, 'dataChanged', this.dataChanged);
+    $(window).on("resize", this.resize.bind(this));
+    this.root = this.collection.conceptTree;
+  },
 
-    //init size variables
-    initSize: function initSizeNav() {
-      this.height = $(window).height();
-      this.width = $(window).width() ;
-      this.i = 0;
-      this.duration = 750;
-    },
+  //init size variables
+  initSize: function initSizeNav() {
+    this.height = $(window).height();
+    this.width = $(window).width();
+    this.i = 0;
+    this.duration = 750;
+  },
 
-    //apply size to svg elements
-    setSize: function setSizeNav() {
-      this.initSize();
+  //apply size to svg elements
+  setSize: function setSizeNav() {
+    this.initSize();
 
-      this.svg
-        .style("width", this.width + "px")
-        .style("height", this.height + "px");
+    this.svg
+      .style("width", this.width + "px")
+      .style("height", this.height + "px");
 
-      this.vis
-        .attr("width", this.width)
-        .attr("height", this.height);
-    },
+    this.vis
+      .attr("width", this.width)
+      .attr("height", this.height);
+  },
 
 
-    dataChanged: function dataChanged() {
-      this.root = this.collection.conceptTree;
-      if(this.root){
-        this.root.x0 = this.height / 2;
-        this.root.y0 = 0;
-        this.preRender();
-      }
-    },
+  dataChanged: function dataChanged() {
+    this.root = this.collection.conceptTree;
+    if (this.root) {
+      this.root.x0 = this.height / 2;
+      this.root.y0 = 0;
+      this.preRender();
+    }
+  },
 
-    filterChanged: function filterChanged() {
-      console.log("filterChanged");
-      this.showFilteredNodes();
-    },
+  filterChanged: function filterChanged() {
+    console.log("filterChanged");
+    this.showFilteredNodes();
+  },
 
-    resize: function resizeNav() {
-      this.setSize();
-      this.render(this.root);
-    },
+  resize: function resizeNav() {
+    this.setSize();
+    this.render(this.root);
+  },
 
-    // Re-renders the titles of the todo item.
-    preRender: function preRenderNav() {
+  // Re-renders the titles of the todo item.
+  preRender: function preRenderNav() {
 
-        this.initSize();
-        $("nav.nav").empty();
-        this.tree = d3.layout.tree()
-          .size([this.height, this.width]);
-        //
-        this.diagonal = d3.svg.diagonal()
-          .projection( function(d) { return [d.y, d.x]; } );
-        //
-        this.svg = d3.select("nav.nav");
-        //
-        this.vis = this.svg.append("svg:svg");
-        //
-        this.main = this.vis
-          .append("svg:g")
-            .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
+    this.initSize();
+    $("nav.nav").empty();
+    this.tree = d3.layout.tree()
+      .size([this.height, this.width]);
+    //
+    this.diagonal = d3.svg.diagonal()
+      .projection(function(d) {
+        return [d.y, d.x];
+      });
+    //
+    this.svg = d3.select("nav.nav");
+    //
+    this.vis = this.svg.append("svg:svg");
+    //
+    this.main = this.vis
+      .append("svg:g")
+      .attr("class", "main " + this.collection.getActiveThesaurus().named_id);
 
-        this.setSize();
+    this.setSize();
 
-        if(this.root) this.render(this.root);
+    if (this.root) this.render(this.root);
 
-    },
-    //render the nav
-    render : function renderNav(source) {
+  },
+  //render the nav
+  render: function renderNav(source) {
 
-      if(source !== undefined){
+    if (source !== undefined) {
 
       // Compute the new tree layout.
       var nodes = this.tree.nodes(this.root).reverse(),
-          links = this.tree.links(nodes);
+        links = this.tree.links(nodes);
 
       // Normalize for fixed-depth.
-      nodes.forEach(function(d) { d.y = d.depth * 180; });
+      nodes.forEach(function(d) {
+        d.y = d.depth * 180;
+      });
 
       // Update the nodes…
       var node = this.main.selectAll("g.node")
-          .data(nodes, function(d) { return d.id || (d.id = ++this.i); });
+        .data(nodes, function(d) {
+          return d.id || (d.id = ++this.i);
+        });
 
       // Enter any new nodes at the parent's previous position.
       var nodeEnter = node.enter().append("g")
-          .attr("class", function(d){ return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id; })
-          .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
-          .on("click", function(d) { this.selectNode(d); }.bind(this)); //d3.selectAll(".node").classed("selected", false); d3.select(".node_" + d.id).classed("selected", true);
+        .attr("class", function(d) {
+          return d.filtered ? "node node_" + d.id + " filtered" : "node node_" + d.id;
+        })
+        .attr("transform", function(d) {
+          return "translate(" + source.y0 + "," + source.x0 + ")";
+        })
+        .on("click", function(d) {
+          this.selectNode(d);
+        }.bind(this)); //d3.selectAll(".node").classed("selected", false); d3.select(".node_" + d.id).classed("selected", true);
 
 
       nodeEnter.append("circle")
-          .attr("r", 1e-6)
-          .attr("class", function(d) { return d._children ? "children" : ""; });
-          //.on("click", this.toggleNode.bind(this));
+        .attr("r", 1e-6)
+        .attr("class", function(d) {
+          return d._children ? "children" : "";
+        });
+      //.on("click", this.toggleNode.bind(this));
 
       nodeEnter.append("text")
-          .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
-          .attr("dy", ".35em")
-          .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
-          .text(function(d) { return d.name; })
-          .style("fill-opacity", 1e-6)
+        .attr("x", function(d) {
+          return d.children || d._children ? -10 : 10;
+        })
+        .attr("dy", ".35em")
+        .attr("text-anchor", function(d) {
+          return d.children || d._children ? "end" : "start";
+        })
+        .text(function(d) {
+          return d.name;
+        })
+        .style("fill-opacity", 1e-6)
 
 
       // Transition nodes to their new position.
       var nodeUpdate = node.transition()
-          .duration(this.duration)
-          .attr("class", function(d){ //return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id;
-            var themodel = this.collection.getActiveConcept();
-            var id = (themodel) ? themodel.attributes.id : null;
-            return (typeof id === "string" && id === d.id) ? "node node_"+d.id+" selected": "node node_"+d.id;
-          }.bind(this))
-          .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+        .duration(this.duration)
+        .attr("class", function(d) { //return d.filtered ? "node node_"+d.id+" filtered": "node node_"+d.id;
+          var themodel = this.collection.getActiveConcept();
+          var id = (themodel) ? themodel.attributes.id : null;
+          return (typeof id === "string" && id === d.id) ? "node node_" + d.id + " selected" : "node node_" + d.id;
+        }.bind(this))
+        .attr("transform", function(d) {
+          return "translate(" + d.y + "," + d.x + ")";
+        });
 
       nodeUpdate.select("circle")
-          .attr("r", 4.5)
-          .attr("class", function(d) { return d._children ? "children" : ""; });
+        .attr("r", 4.5)
+        .attr("class", function(d) {
+          return d._children ? "children" : "";
+        });
 
       nodeUpdate.select("text")
-          .style("fill-opacity", 1);
+        .style("fill-opacity", 1);
 
       // Transition exiting nodes to the parent's new position.
       var nodeExit = node.exit().transition()
-          .duration(this.duration)
-          .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
-          .remove();
+        .duration(this.duration)
+        .attr("transform", function(d) {
+          return "translate(" + source.y + "," + source.x + ")";
+        })
+        .remove();
 
       nodeExit.select("circle")
-          .attr("r", 1e-6);
+        .attr("r", 1e-6);
 
       nodeExit.select("text")
-          .style("fill-opacity", 1e-6);
+        .style("fill-opacity", 1e-6);
 
       // Update the links…
       var link = this.main.selectAll("path.link")
-          .data(links, function(d) { return d.target.id; });
+        .data(links, function(d) {
+          return d.target.id;
+        });
 
       var diagonal = this.diagonal;
       // Enter any new links at the parent's previous position.
       link.enter().insert("path", "g")
-          .attr("class", "link")
-          .attr("d", function(d) {
-            var o = {x: source.x0, y: source.y0};
-            return diagonal({source: o, target: o});
+        .attr("class", "link")
+        .attr("d", function(d) {
+          var o = {
+            x: source.x0,
+            y: source.y0
+          };
+          return diagonal({
+            source: o,
+            target: o
           });
+        });
 
       // Transition links to their new position.
       link.transition()
-          .duration(this.duration)
-          .attr("d", diagonal);
+        .duration(this.duration)
+        .attr("d", diagonal);
 
       // Transition exiting nodes to the parent's new position.
       link.exit().transition()
-          .duration(this.duration)
-          .attr("d", function(d) {
-            var o = {x: source.x, y: source.y};
-            return diagonal({source: o, target: o});
-          })
-          .remove();
-
-        // Stash the old positions for transition.
-        nodes.forEach(function(d) {
-          d.x0 = d.x;
-          d.y0 = d.y;
-        });
-
-      }
-    },
-    //open / close a branch of the tree
-    toggleNode: function toggleNodeNav(d) {
-      //console.log(d);
-      //open all nodes
-      function toggleChildren (node, open){
-        //console.log(node,open)
-        if(!open && node.children){
-          node._children = node.children;
-          node.children = null;
-        }else if(open && node._children){
-          node.children = node._children;
-          node._children = null;
-        }
-      }
-      //open all children
-      function openAllChildren (node){
-        var children = node.children || node._children;
-        if(children){
-          for (var i = 0; i < children.length; i++){
-            //console.log("element",node.children[i]);
-            toggleChildren(children[i], true);
-            openAllChildren(children[i]);
-          }
-        }
-      }
-      openAllChildren(this.root);
-      //
-      function closeSiblings(node){
-        if (!node.parent) return;
-        var siblings = node.parent.children;
-        for (var i = 0; i < siblings.length; i++){
-          if(siblings[i].uri !== node.uri){
-            toggleChildren(siblings[i], false);
-          }
-        }
-        closeSiblings(node.parent);
-      }
-      closeSiblings(d);
-      this.render(this.root);
-    },
-    //
-    findNode: function findNodeNav(node, uri) {
-      var children = node.children || node._children;
-      //console.log("enfants", children, uri)
-      var that = this;
-      var nodeFound;
-      if(children){
-        children.forEach(function(element){
-          if(element.uri === uri) {
-            nodeFound = element;
-          }
-          if(!nodeFound) nodeFound = that.findNode(element, uri);
+        .duration(this.duration)
+        .attr("d", function(d) {
+          var o = {
+            x: source.x,
+            y: source.y
+          };
+          return diagonal({
+            source: o,
+            target: o
+          });
         })
-        return nodeFound;
+        .remove();
+
+      // Stash the old positions for transition.
+      nodes.forEach(function(d) {
+        d.x0 = d.x;
+        d.y0 = d.y;
+      });
+
+    }
+  },
+  //open / close a branch of the tree
+  toggleNode: function toggleNodeNav(d) {
+    //console.log(d);
+    //open all nodes
+    function toggleChildren(node, open) {
+      //console.log(node,open)
+      if (!open && node.children) {
+        node._children = node.children;
+        node.children = null;
+      } else if (open && node._children) {
+        node.children = node._children;
+        node._children = null;
       }
-    },
-     //highlight selected concept (listener conceptChanged)
-    conceptChanged: function conceptChangedNav() {
-
-      var themodel = this.collection.getActiveConcept();
-      var id = (themodel) ? themodel.attributes.id : null;
-
-      if(typeof id === "string") {
-        var alreadySelected = d3.select(".node.node_" + id + ".selected");
-        if(! alreadySelected[0][0] && d3.select(".node")[0][0]) {
-          d3.selectAll(".node.selected").classed("selected", false);
-          d3.select(".node_" + id).classed("selected", true);
-          this.toggleNode(this.findNode(this.root, themodel.attributes.uri));
+    }
+    //open all children
+    function openAllChildren(node) {
+      var children = node.children || node._children;
+      if (children) {
+        for (var i = 0; i < children.length; i++) {
+          //console.log("element",node.children[i]);
+          toggleChildren(children[i], true);
+          openAllChildren(children[i]);
         }
       }
-    },
-
-    //when a text concept is clicked
-    selectNode: function selectNodeNav(d, i) {
-      //send request to the router
-      application.router.navigate(application.processUri(d.uri), {trigger : true});
-
-      //backbone being smart enough not to trigger the route if concept already selected
-      //we need to make sure the pop-up is open
-      this.collection.toggleConcept(true);
-
-      d3.event.stopPropagation();
     }
+    openAllChildren(this.root);
+    //
+    function closeSiblings(node) {
+      if (!node.parent) return;
+      var siblings = node.parent.children;
+      for (var i = 0; i < siblings.length; i++) {
+        if (siblings[i].uri !== node.uri) {
+          toggleChildren(siblings[i], false);
+        }
+      }
+      closeSiblings(node.parent);
+    }
+    closeSiblings(d);
+    this.render(this.root);
+  },
+  //
+  findNode: function findNodeNav(node, uri) {
+    var children = node.children || node._children;
+    //console.log("enfants", children, uri)
+    var that = this;
+    var nodeFound;
+    if (children) {
+      children.forEach(function(element) {
+        if (element.uri === uri) {
+          nodeFound = element;
+        }
+        if (!nodeFound) nodeFound = that.findNode(element, uri);
+      })
+      return nodeFound;
+    }
+  },
+  //highlight selected concept (listener conceptChanged)
+  conceptChanged: function conceptChangedNav() {
+
+    var themodel = this.collection.getActiveConcept();
+    var id = (themodel) ? themodel.attributes.id : null;
+
+    if (typeof id === "string") {
+      var alreadySelected = d3.select(".node.node_" + id + ".selected");
+      if (!alreadySelected[0][0] && d3.select(".node")[0][0]) {
+        d3.selectAll(".node.selected").classed("selected", false);
+        d3.select(".node_" + id).classed("selected", true);
+        this.toggleNode(this.findNode(this.root, themodel.attributes.uri));
+      }
+    }
+  },
+
+  //when a text concept is clicked
+  selectNode: function selectNodeNav(d, i) {
+    //send request to the router
+    application.router.navigate(application.processUri(d.uri), {
+      trigger: true
+    });
+
+    //backbone being smart enough not to trigger the route if concept already selected
+    //we need to make sure the pop-up is open
+    this.collection.toggleConcept(true);
+
+    d3.event.stopPropagation();
+  }
 
 });
 
+});
+
+require.register("js/views/selectNav.js", function(exports, require, module) {
 var View = require('./view');
 var application = require('../application');
 module.exports = View.extend({
@@ -1419,32 +1730,35 @@ module.exports = View.extend({
     }
 
 });
+});
+
+require.register("js/views/templates/concept.hbs", function(exports, require, module) {
 var __templateData = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
     return "    <nav>\n      <a class=\"prev\" href=\"/\"><</a>\n      <a class=\"next\" href=\"/\">></a>\n    </nav>\n";
 },"3":function(container,depth0,helpers,partials,data) {
     var stack1;
 
   return "        <h1>"
-    + ((stack1 = (helpers.label_with_language || (depth0 && depth0.label_with_language) || helpers.helperMissing).call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.prefLabel : depth0),(depth0 != null ? depth0.language : depth0),{"name":"label_with_language","hash":{},"data":data})) != null ? stack1 : "")
+    + ((stack1 = (helpers.label_with_language || (depth0 && depth0.label_with_language) || helpers.helperMissing).call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.prefLabel : depth0),(depth0 != null ? depth0.language : depth0),{"name":"label_with_language","hash":{},"data":data})) != null ? stack1 : "")
     + "</h1>\n";
 },"5":function(container,depth0,helpers,partials,data) {
     var stack1;
 
   return "        <h2><code>skos:definition</code></h2>\n        <p class=\"definition\">"
-    + ((stack1 = (helpers.translation_label || (depth0 && depth0.translation_label) || helpers.helperMissing).call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.conceptDefinition : depth0),{"name":"translation_label","hash":{},"data":data})) != null ? stack1 : "")
+    + ((stack1 = (helpers.translation_label || (depth0 && depth0.translation_label) || helpers.helperMissing).call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.conceptDefinition : depth0),{"name":"translation_label","hash":{},"data":data})) != null ? stack1 : "")
     + "</p>\n";
 },"7":function(container,depth0,helpers,partials,data) {
     var stack1;
 
-  return ((stack1 = helpers["if"].call(depth0 != null ? depth0 : {},"prefLabel && concept",{"name":"if","hash":{},"fn":container.program(8, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
+  return ((stack1 = helpers["if"].call(depth0 != null ? depth0 : (container.nullContext || {}),"prefLabel && concept",{"name":"if","hash":{},"fn":container.program(8, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "");
 },"8":function(container,depth0,helpers,partials,data) {
     var stack1;
 
   return "        <h2><code>skos:prefLabel</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.prefLabel : depth0),{"name":"each","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.prefLabel : depth0),{"name":"each","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"9":function(container,depth0,helpers,partials,data) {
-    var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
+    var stack1, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing;
 
   return "          <li>"
     + ((stack1 = (helpers.translation_label || (depth0 && depth0.translation_label) || alias2).call(alias1,depth0,{"name":"translation_label","hash":{},"data":data})) != null ? stack1 : "")
@@ -1455,13 +1769,13 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
     var stack1;
 
   return "        <h2><code>skos:altLabel</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.altLabel : depth0),{"name":"each","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.altLabel : depth0),{"name":"each","hash":{},"fn":container.program(9, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"13":function(container,depth0,helpers,partials,data) {
     var stack1;
 
   return "        <h2><code>skos:hasTopConcept</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.hasTopConcept : depth0),{"name":"each","hash":{},"fn":container.program(14, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.hasTopConcept : depth0),{"name":"each","hash":{},"fn":container.program(14, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"14":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=container.lambda;
@@ -1475,10 +1789,10 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
     var stack1;
 
   return "        <h2><code>skos:broader</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.parents : depth0),{"name":"each","hash":{},"fn":container.program(17, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.parents : depth0),{"name":"each","hash":{},"fn":container.program(17, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"17":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing;
 
   return "            <li class=\"parent_"
     + container.escapeExpression(((helper = (helper = helpers.index || (data && data.index)) != null ? helper : alias2),(typeof helper === "function" ? helper.call(alias1,{"name":"index","hash":{},"data":data}) : helper)))
@@ -1491,7 +1805,7 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
     var stack1;
 
   return "        <h2><code>skos:narrower</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.narrower : depth0),{"name":"each","hash":{},"fn":container.program(20, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.narrower : depth0),{"name":"each","hash":{},"fn":container.program(20, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"20":function(container,depth0,helpers,partials,data) {
     var stack1;
@@ -1499,16 +1813,16 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
   return "          <li><a href=\""
     + ((stack1 = container.lambda(depth0, depth0)) != null ? stack1 : "")
     + "\" class=\"link\">"
-    + ((stack1 = (helpers.name_with_uri || (depth0 && depth0.name_with_uri) || helpers.helperMissing).call(depth0 != null ? depth0 : {},depth0,{"name":"name_with_uri","hash":{},"data":data})) != null ? stack1 : "")
+    + ((stack1 = (helpers.name_with_uri || (depth0 && depth0.name_with_uri) || helpers.helperMissing).call(depth0 != null ? depth0 : (container.nullContext || {}),depth0,{"name":"name_with_uri","hash":{},"data":data})) != null ? stack1 : "")
     + "</a></li>\n";
 },"22":function(container,depth0,helpers,partials,data) {
     var stack1;
 
   return "        <h2><code>skos:exactMatch</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.exactMatch : depth0),{"name":"each","hash":{},"fn":container.program(23, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.exactMatch : depth0),{"name":"each","hash":{},"fn":container.program(23, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"23":function(container,depth0,helpers,partials,data) {
-    var stack1, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing;
+    var stack1, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing;
 
   return "        	<li><a href=\""
     + ((stack1 = container.lambda(depth0, depth0)) != null ? stack1 : "")
@@ -1521,7 +1835,7 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
     var stack1;
 
   return "        <h2><code>skos:closeMatch</code></h2>\n        <ul>\n"
-    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : {},(depth0 != null ? depth0.closeMatch : depth0),{"name":"each","hash":{},"fn":container.program(26, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
+    + ((stack1 = helpers.each.call(depth0 != null ? depth0 : (container.nullContext || {}),(depth0 != null ? depth0.closeMatch : depth0),{"name":"each","hash":{},"fn":container.program(26, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
     + "        </ul>\n";
 },"26":function(container,depth0,helpers,partials,data) {
     var stack1, alias1=container.lambda;
@@ -1529,12 +1843,12 @@ var __templateData = Handlebars.template({"1":function(container,depth0,helpers,
   return "        	<li><a href=\""
     + ((stack1 = alias1(depth0, depth0)) != null ? stack1 : "")
     + "\" "
-    + ((stack1 = (helpers.is_internal_link || (depth0 && depth0.is_internal_link) || helpers.helperMissing).call(depth0 != null ? depth0 : {},depth0,{"name":"is_internal_link","hash":{},"data":data})) != null ? stack1 : "")
+    + ((stack1 = (helpers.is_internal_link || (depth0 && depth0.is_internal_link) || helpers.helperMissing).call(depth0 != null ? depth0 : (container.nullContext || {}),depth0,{"name":"is_internal_link","hash":{},"data":data})) != null ? stack1 : "")
     + ">"
     + ((stack1 = alias1(depth0, depth0)) != null ? stack1 : "")
     + "</a></li>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function";
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function";
 
   return "<div class=\"concept "
     + ((stack1 = ((helper = (helper = helpers.foldedClass || (depth0 != null ? depth0.foldedClass : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"foldedClass","hash":{},"data":data}) : helper))) != null ? stack1 : "")
@@ -1572,7 +1886,10 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
+});
+
+;require.register("js/views/templates/footer.hbs", function(exports, require, module) {
+var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     return "<ul>\n	<li><a href=\"http://www.philharmoniedeparis.fr\" target=\"_blank\"><img src=\"images/logos/philharmonie.png\" alt=\"Philharmonie de Paris\" /></a></li>\n	<li><a href=\"http://www.ed.ac.uk\" target=\"_blank\"><img src=\"images/logos/edinburgh.png\" alt=\"The University of Edinburgh\" /></a></li>\n	<li><a href=\"http://www.gnm.de\" target=\"_blank\"><img src=\"images/logos/gnm.png\" alt=\"Germanisches National Museum\" /></a></li>\n	<li><a href=\"http://www.mim.be\" target=\"_blank\"><img src=\"images/logos/mim.png\" alt=\"Musik Instrumenten Museum\" /></a></li>\n	<li><a href=\"http://network.icom.museum/cimcim/\" target=\"_blank\"><img src=\"images/logos/icom.png\" alt=\"International Council of Museums\" /></a></li>\n</ul>";
 },"useData":true});
 if (typeof define === 'function' && define.amd) {
@@ -1584,7 +1901,10 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
+});
+
+;require.register("js/views/templates/header.hbs", function(exports, require, module) {
+var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     return "<a href=\"/\"><img src=\"/images/logos/mimo.png\" alt=\"MIMO - Musical Instruments Museums Online\" /></a>\n<!--VIZKOS-->\n";
 },"useData":true});
 if (typeof define === 'function' && define.amd) {
@@ -1596,68 +1916,73 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var Handlebars = require("hbsfy/runtime");
-var application = require("../../application");
+});
 
-Handlebars.registerHelper('label_with_language', function(labels, language) {
-	//if a language is specified
+;require.register("js/views/templates/helpers.js", function(exports, require, module) {
+const runtime = require("handlebars/runtime").default;
 
-	if(language) {
-		var filteredLabels = labels.filter(function(element){
-			return element["@language"] === language;
-		})
-		if(filteredLabels[0]) return filteredLabels[0]["@value"];
-	}
+runtime.registerHelper('label_with_language', function(labels, language) {
+  var filteredLabels;
+  //if a language is specified
+  if (language) {
+    filteredLabels = labels.filter(function(element) {
+      return element["@language"] === language;
+    });
+    if (filteredLabels[0]) return filteredLabels[0]["@value"];
+  }
 
-	//otherwise get "pivot" element, the only one which is a string
+  //otherwise get "pivot" element, the only one which is a string
 
-	var filteredLabels = labels.filter(function(element){
-		return typeof element === "string";
-	})
-	return filteredLabels[0];
+  filteredLabels = labels.filter(function(element) {
+    return typeof element === "string";
+  });
+  return filteredLabels[0];
 
 });
 
-Handlebars.registerHelper('translation_language', function(labelObject) {
-	if (!labelObject) return;
-	//specific to MIMO thesaurus, pivot language has no language attribute
-	//(it's a convention, not a real language)
-	if (typeof labelObject  === "string") return "pivot";
-	return labelObject["@language"];
+runtime.registerHelper('translation_language', function(labelObject) {
+  if (!labelObject) return;
+  //specific to MIMO thesaurus, pivot language has no language attribute
+  //(it's a convention, not a real language)
+  if (typeof labelObject === "string") return "pivot";
+  return labelObject["@language"];
 });
 
-Handlebars.registerHelper('translation_label', function(labelObject) {
-	if (!labelObject) return;
-	//specific to MIMO thesaurus, pivot language has no language attribute
-	//(it's a convention, not a real language)
-	if (typeof labelObject  === "string") return labelObject;
-	return labelObject["@value"];
+runtime.registerHelper('translation_label', function(labelObject) {
+  if (!labelObject) return;
+  //specific to MIMO thesaurus, pivot language has no language attribute
+  //(it's a convention, not a real language)
+  if (typeof labelObject === "string") return labelObject;
+  return labelObject["@value"];
 });
 
-Handlebars.registerHelper('properties_list', function(property) {
-  	if(Array.isArray(property)) return property;
-  	return [property];
+runtime.registerHelper('properties_list', function(property) {
+  if (Array.isArray(property)) return property;
+  return [property];
 });
 
-Handlebars.registerHelper('process_uri', function(uri) {
-	if(!uri) return;
-	return application.processUri(uri);
+runtime.registerHelper('process_uri', function(uri) {
+  if (!uri) return;
+  return window.application.processUri(uri);
 });
 
-Handlebars.registerHelper('name_with_uri', function(uri) {
-	if (!uri) return;
-	return application.collection.getNameWithUri(uri);
+runtime.registerHelper('name_with_uri', function(uri) {
+  if (!uri) return;
+  return window.application.collection.getNameWithUri(uri);
 });
 
-Handlebars.registerHelper('is_internal_link', function(uri) {
-	if(!uri) return;
-  	if(application.collection.matchAnyThesaurus(uri)){
-  		return " class='link'";
-  	}else{
-  		return " target='_blank'";
-  	}
+runtime.registerHelper('is_internal_link', function(uri) {
+  if (!uri) return;
+  if (window.application.collection.matchAnyThesaurus(uri)) {
+    return " class='link'";
+  } else {
+    return " target='_blank'";
+  }
 });
 
+});
+
+require.register("js/views/templates/home.hbs", function(exports, require, module) {
 var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     return "<div class=\"home\" style=\"background:url('images/international1.jpg') left top no-repeat fixed;\">\n	<div class=\"box international\">\n		<a href=\"http://www.mimo-international.com/MIMO/\" style=\"background: url('images/international1.jpg') left top no-repeat fixed; \">\n			<div class=\"text\">\n				<h2>Museum collections</h2>\n				<p><span>Explore the world collections of musical instruments.</span></p>\n			</div>\n		</a>\n	</div>\n	<div class=\"box thesaurus\">\n		<a href=\"InstrumentsKeywords/\" style=\"background:url('images/vizskos.png')  left top no-repeat fixed;\">\n			<div class=\"text\">\n				<h2>Vocabulary</h2>\n				<p><span>Browse MIMO thesaurus and Hornbostel &amp; Sachs Classification using VIZSKOS, a SKOS data visualization tool.</span></p>\n			</div>\n		</a>\n	</div>\n	<div class=\"box admin\">\n		<a href=\"http://www.mimo-db.eu/mimo/infodoc/page-daccueil-infodoc.aspx?_lg=EN-en\" style=\"background:url('images/international3.jpg') left top no-repeat fixed; \">\n			<div class=\"text\">\n				<h2>Database</h2>\n				<p><span>Use MIMO-DB backoffice to administrate your collection and perform advanced search.</span></p>\n			</div>\n		</a>\n	</div>\n\n</div>";
 },"useData":true});
@@ -1670,7 +1995,10 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
+});
+
+;require.register("js/views/templates/main.hbs", function(exports, require, module) {
+var __templateData = Handlebars.template({"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
     return "<main class=\"main\">\n  <header>\n  	<div class=\"logo\"></div>\n  	<nav class=\"tools\"></nav>\n  </header>\n  \n  <nav class=\"nav\">\n    \n  </nav>\n  <article></article>\n</main>\n<footer></footer>";
 },"useData":true});
 if (typeof define === 'function' && define.amd) {
@@ -1682,8 +2010,11 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var __templateData = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+});
+
+;require.register("js/views/templates/selectNav.hbs", function(exports, require, module) {
+var __templateData = Handlebars.template({"1":function(container,depth0,helpers,partials,data) {
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
   return "  		<option value=\""
     + alias4(((helper = (helper = helpers.named_id || (depth0 != null ? depth0.named_id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"named_id","hash":{},"data":data}) : helper)))
@@ -1695,7 +2026,7 @@ if (typeof define === 'function' && define.amd) {
 },"2":function(container,depth0,helpers,partials,data) {
     return " selected=\"selected\" ";
 },"4":function(container,depth0,helpers,partials,data) {
-    var stack1, helper, alias1=depth0 != null ? depth0 : {}, alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
+    var stack1, helper, alias1=depth0 != null ? depth0 : (container.nullContext || {}), alias2=helpers.helperMissing, alias3="function", alias4=container.escapeExpression;
 
   return "  		<option value=\""
     + alias4(((helper = (helper = helpers.id || (depth0 != null ? depth0.id : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"id","hash":{},"data":data}) : helper)))
@@ -1705,7 +2036,7 @@ if (typeof define === 'function' && define.amd) {
     + alias4(((helper = (helper = helpers.name || (depth0 != null ? depth0.name : depth0)) != null ? helper : alias2),(typeof helper === alias3 ? helper.call(alias1,{"name":"name","hash":{},"data":data}) : helper)))
     + "</option>\n";
 },"compiler":[7,">= 4.0.0"],"main":function(container,depth0,helpers,partials,data) {
-    var stack1, alias1=depth0 != null ? depth0 : {};
+    var stack1, alias1=depth0 != null ? depth0 : (container.nullContext || {});
 
   return "<form>\n	<select id=\"selectThesaurus\" name=\"selectThesaurus\">\n"
     + ((stack1 = helpers.each.call(alias1,(depth0 != null ? depth0.thesauri : depth0),{"name":"each","hash":{},"fn":container.program(1, data, 0),"inverse":container.noop,"data":data})) != null ? stack1 : "")
@@ -1722,7 +2053,11 @@ if (typeof define === 'function' && define.amd) {
 } else {
   __templateData;
 }
-;var _ = require('underscore');
+});
+
+;require.register("js/views/view.js", function(exports, require, module) {
+var _ = require('underscore');
+const Backbone = require('backbone');
 var helpers = require('./templates/helpers');
 
 module.exports = Backbone.View.extend({
@@ -1742,6 +2077,12 @@ module.exports = Backbone.View.extend({
 
   afterRender: function afterRenderView() {}
 });
+
+});
+
+require.alias("process/browser.js", "process");process = require('process');require.register("___globals___", function(exports, require, module) {
+  
+});})();require('___globals___');
 
 
 //# sourceMappingURL=app.js.map

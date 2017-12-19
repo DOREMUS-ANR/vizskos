@@ -1,5 +1,7 @@
-module.exports = Backbone.Model.extend({
+const _ = require('underscore');
+const Backbone = require('backbone');
 
+module.exports = Backbone.Model.extend({
   // Default
   defaults: {
     concept : true, language : 'fr'

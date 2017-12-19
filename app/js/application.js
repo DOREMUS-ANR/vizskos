@@ -1,20 +1,30 @@
+var AppView = require('./views/app');
+var Router = require('./routers/router');
+var Thesaurus = require('./models/thesaurus');
+
 var Application = {
-
   initialize: function initializeApplication(params) {
-
-  	var AppView = require('./views/app');
-  	var Router = require('./routers/router');
-  	var Thesaurus = require('./models/thesaurus');
-
     //create the collection of concepts
-    this.collection = new Thesaurus([],{ thesauri: params.thesauri });
+    this.collection = new Thesaurus([], {
+      thesauri: params.thesauri
+    });
 
     //create the app view, with a reference to the collection and this application
-    this.appView = new AppView({ el: "#" + params.id, collection : this.collection, attributes : { application: this }});
+    this.appView = new AppView({
+      el: "#" + params.id,
+      collection: this.collection,
+      attributes: {
+        application: this
+      }
+    });
 
     //create the router, with a reference to the collection and this application
-    this.router = new Router({collection : this.collection, attributes : { application: this }});
-
+    this.router = new Router({
+      collection: this.collection,
+      attributes: {
+        application: this
+      }
+    });
   },
 
   //fonction to handle the different kinds of URLs
@@ -31,20 +41,20 @@ var Application = {
   //ex 4
   //the URL is "http://localhost:3333/http://www.mimo-db.eu/InstrumentsKeywords/3305"
   //the path is "http://www.mimo-db.eu/InstrumentsKeywords/3305"
-  processUri : function processUriApplication(path){
+  processUri: function processUriApplication(path) {
     //path = "doremus/peuples/" + path;
     path = path;
     //if the path is the same as the location (ex 1)
-    if(path.search(location.origin) !== -1){
+    if (path.search(location.origin) !== -1) {
       //replace it with example 3, more user friendly
       return path.replace(location.origin, "");
-    //else if the path is not the same as the location
-    }else {
+      //else if the path is not the same as the location
+    } else {
       //if the path does not contain uri=, add it
-      if(path.search("uri=http") === -1){
+      if (path.search("uri=http") === -1) {
         return path.replace("http", "uri=http");
-      //pass on the path
-      }else{
+        //pass on the path
+      } else {
         return path;
       }
     }

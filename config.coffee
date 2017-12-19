@@ -2,24 +2,24 @@ exports.config =
   files:
     javascripts:
       joinTo:
-        'javascripts/app.js': /^app/
-        'javascripts/vendor.js': /^bower_components/
-      order:
-        before: [
-          /^bower_components\/jquery/,
-          /^bower_components\/underscore/
-        ]
+        'js/app.js': /^app/
+        'js/vendor.js': /^(?!app)/
+      # order:
+      #   before: [
+      #     /^bower_components\/jquery/,
+      #     /^bower_components\/underscore/
+      #   ]
     stylesheets:
       joinTo:
         'css/vendor.css': /^vendor/
         'css/app.css': /^app/
 
     templates:
-      joinTo: 'javascripts/app.js'
+      joinTo: 'js/app.js'
 
   modules:
-    wrapper: false
-    definition: false
+    wrapper: 'commonjs'
+    definition: 'commonjs'
 
   plugins:
     browserify:
@@ -30,7 +30,7 @@ exports.config =
       """
 
       bundles:
-        'javascripts/app.js':
+        'js/app.js':
           # Passed to browserify.
           entry: 'app/initialize.js'
 

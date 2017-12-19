@@ -1,3 +1,7 @@
+const _ = require('underscore');
+const $ = require('jquery');
+const Backbone = require('backbone');
+
 var jsonld = require('jsonld');
 var concept = require('./concept');
 var application = require('../application');
